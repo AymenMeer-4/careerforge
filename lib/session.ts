@@ -23,26 +23,26 @@ export const sessionOptions = {
 };
 
 export async function getSession() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
-  
+
   if (!session.userId) {
     return null;
   }
-  
+
   return session;
 }
 
 export async function requireSession(role?: Role) {
   const session = await getSession();
-  
+
   if (!session) {
     throw new Error('Unauthorized'); // Basic return for now; real impl might redirect or use NextResponse
   }
-  
+
   if (role && session.role !== role) {
     throw new Error('Forbidden');
   }
-  
+
   return session;
 }
