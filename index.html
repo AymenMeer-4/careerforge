@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CareerForge AI — AI-powered career guidance platform that analyzes your skills, predicts career success, and builds personalized roadmaps.">
+  <title>CareerForge AI — Data-Driven Career Guidance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="navbar">
+  <div class="nav-logo">
+    <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="url(#lg1)" stroke-width="2.5"/><path d="M10 18 L16 10 L22 18" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="10" x2="16" y2="24" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round"/><defs><linearGradient id="lg1" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#6c5ce7"/><stop offset="1" stop-color="#00cec9"/></linearGradient></defs></svg>
+    CareerForge <span class="text-gradient">AI</span>
+  </div>
+  <div class="nav-links">
+    <a href="#" data-page="landing" class="active" data-i18n="nav_home">Home</a>
+    <a href="#" data-page="dashboard" data-i18n="nav_dashboard">Dashboard</a>
+    <a href="#" data-page="predictions" data-i18n="nav_predictions">Predictions Simulator</a>
+    <a href="#" data-page="skills" data-i18n="nav_skills">Skills</a>
+    <a href="#" data-page="roadmap" data-i18n="nav_roadmap">Roadmap</a>
+  </div>
+  <div class="nav-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="ar">عربي</button>
+    </div>
+    <div class="user-menu" id="userMenu">
+      <button class="user-avatar" id="userAvatarBtn" aria-label="User menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>
+      </button>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">Signed in as<br><strong id="dropdownUserName">Alex</strong></div>
+        <a href="#" data-page="profile" class="dropdown-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Profile</a>
+        <div class="dropdown-divider"></div>
+        <a href="#" id="logoutBtn" class="dropdown-item dropdown-danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Log Out</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- SVG Defs for score ring -->
+<svg style="position:absolute;width:0;height:0">
+  <defs>
+    <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6c5ce7"/>
+      <stop offset="100%" stop-color="#00cec9"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ═══════════ LANDING PAGE ═══════════ -->
+<section class="page active" id="page-landing">
+  <div class="container hero">
+    <div class="hero-content">
+      <div class="hero-badge"><span class="dot"></span> AI-Powered Career Intelligence</div>
+      <h1>Turn your future into a data‑driven decision</h1>
+      <p>CareerForge AI analyzes your skills, academic performance, and interests to predict the best career paths, identify skill gaps, and build a personalized roadmap to your dream job.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" data-page="dashboard">Start Your Career Journey <span>→</span></button>
+        <button class="btn-secondary" data-page="insights">See How It Works</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="container features">
+    <div class="section-label">Capabilities</div>
+    <h2 class="section-title">Powered by advanced AI models</h2>
+    <p class="section-sub">We combine machine learning with labor market data to deliver actionable career intelligence.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon" style="background:rgba(108,92,231,0.15);color:#a29bfe">📊</div>
+        <h3>Career Predictions</h3>
+        <p>AI-generated career path predictions with success probability scores based on your unique profile.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:rgba(0,206,201,0.15);color:#00cec9">🎯</div>
+        <h3>Skill Gap Analysis</h3>
+        <p>Visual comparison of your current skills vs. market requirements with actionable recommendations.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:rgba(253,203,110,0.15);color:#fdcb6e">🗺️</div>
+        <h3>Personalized Roadmap</h3>
+        <p>Step-by-step learning path with certifications and milestones tailored to your target career.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:rgba(0,184,148,0.15);color:#00b894">🔬</div>
+        <h3>Career Simulator</h3>
+        <p>Simulate "What if I learn this skill?" scenarios and watch your success probability change in real-time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:rgba(225,112,85,0.15);color:#e17055">💼</div>
+        <h3>Job Matching</h3>
+        <p>AI-curated job recommendations ranked by match percentage based on your skills and aspirations.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<section class="page" id="page-dashboard">
+  <div class="container dashboard">
+    <div class="dash-header">
+      <h2>Welcome back, <span class="text-gradient">Alex</span></h2>
+      <span style="color:var(--text-muted);font-size:0.85rem">Last updated: Today, 2:30 PM</span>
+    </div>
+
+    <div class="dash-top">
+      <!-- Score -->
+      <div class="card score-card">
+        <div class="card-title">Career Readiness</div>
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="bg" cx="60" cy="60" r="52"/>
+            <circle class="progress" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="114.35"/>
+          </svg>
+          <div class="score-value">65%</div>
+        </div>
+        <div class="score-label">Above average for your field</div>
+      </div>
+
+      <!-- Top Career Matches -->
+      <div class="card">
+        <div class="card-title">Top Career Matches</div>
+        <div class="career-item"><div class="career-info"><h4>ML Engineer</h4><span>High demand · Remote friendly</span></div><div class="career-pct">87%</div></div>
+        <div class="career-item"><div class="career-info"><h4>Data Scientist</h4><span>Growing field · High salary</span></div><div class="career-pct">82%</div></div>
+        <div class="career-item"><div class="career-info"><h4>AI Researcher</h4><span>Academic path · Innovation</span></div><div class="career-pct">74%</div></div>
+        <div class="career-item"><div class="career-info"><h4>Full-Stack Dev</h4><span>Versatile · Startup culture</span></div><div class="career-pct">68%</div></div>
+      </div>
+
+      <!-- Progress -->
+      <div class="card">
+        <div class="card-title">Progress Tracking</div>
+        <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Skills Acquired</span><span style="color:var(--accent)">12/18</span></div><div class="progress-bar"><div class="progress-fill" style="width:67%"></div></div></div>
+        <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Certifications</span><span style="color:var(--accent)">3/5</span></div><div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div></div>
+        <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Projects Completed</span><span style="color:var(--accent)">7/10</span></div><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Interview Readiness</span><span style="color:var(--accent)">55%</span></div><div class="progress-bar"><div class="progress-fill" style="width:55%"></div></div></div>
+      </div>
+    </div>
+
+    <div class="dash-bottom">
+      <!-- Job Matching -->
+      <div class="card">
+        <div class="card-title">Recommended Jobs</div>
+        <div class="job-item"><div class="job-icon" style="background:rgba(108,92,231,0.15)">🤖</div><div class="job-details"><h4>ML Engineer — Google</h4><span>Mountain View, CA · $180k–$250k</span></div><div class="job-match">92%</div></div>
+        <div class="job-item"><div class="job-icon" style="background:rgba(0,206,201,0.15)">📊</div><div class="job-details"><h4>Data Scientist — Spotify</h4><span>Remote · $140k–$190k</span></div><div class="job-match">85%</div></div>
+        <div class="job-item"><div class="job-icon" style="background:rgba(253,203,110,0.15)">🧠</div><div class="job-details"><h4>AI Research Intern — OpenAI</h4><span>San Francisco, CA · $90k</span></div><div class="job-match">78%</div></div>
+        <div class="job-item"><div class="job-icon" style="background:rgba(0,184,148,0.15)">💻</div><div class="job-details"><h4>Backend Engineer — Stripe</h4><span>Remote · $160k–$210k</span></div><div class="job-match">71%</div></div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-title">Quick Actions & Recommendations</div>
+        <div class="ai-explanation" style="margin-top:0;margin-bottom:12px">
+          <h4>🤖 AI Recommendation</h4>
+          <p>Based on your current profile, learning <strong>TensorFlow</strong> and completing a <strong>cloud computing certification</strong> would increase your ML Engineer match to <strong>95%</strong>.</p>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn-primary" data-page="skills" style="font-size:0.85rem;padding:10px 20px">View Skill Gaps</button>
+          <button class="btn-secondary" data-page="roadmap" style="font-size:0.85rem;padding:10px 20px">Open Roadmap</button>
+          <button class="btn-secondary" data-page="simulator" style="font-size:0.85rem;padding:10px 20px">Try Simulator</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ INSIGHTS ═══════════ -->
+<section class="page" id="page-insights">
+  <div class="container insights">
+    <div class="section-label">Career Insights</div>
+    <h2 class="section-title">AI-Powered Career Predictions</h2>
+    <p class="section-sub">Deep analysis of your profile against current market trends and employer expectations.</p>
+
+    <div class="insights-grid">
+      <div class="card">
+        <div class="card-title">Career Fit Distribution</div>
+        <div class="chart-placeholder">
+          <div class="insight-bars">
+            <div class="insight-bar" style="height:87%"><span>ML Eng</span></div>
+            <div class="insight-bar" style="height:82%"><span>Data Sci</span></div>
+            <div class="insight-bar" style="height:74%"><span>AI Res</span></div>
+            <div class="insight-bar" style="height:68%"><span>Full-Stack</span></div>
+            <div class="insight-bar" style="height:55%"><span>DevOps</span></div>
+            <div class="insight-bar" style="height:42%"><span>PM</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Salary Projection (5 Years)</div>
+        <div class="chart-placeholder">
+          <div class="insight-bars">
+            <div class="insight-bar" style="height:30%"><span>Now</span></div>
+            <div class="insight-bar" style="height:45%"><span>Y1</span></div>
+            <div class="insight-bar" style="height:58%"><span>Y2</span></div>
+            <div class="insight-bar" style="height:72%"><span>Y3</span></div>
+            <div class="insight-bar" style="height:85%"><span>Y4</span></div>
+            <div class="insight-bar" style="height:95%"><span>Y5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insights-grid">
+      <div class="card">
+        <div class="card-title">Market Demand Trends</div>
+        <div class="chart-placeholder">
+          <div class="insight-bars">
+            <div class="insight-bar" style="height:92%"><span>AI/ML</span></div>
+            <div class="insight-bar" style="height:85%"><span>Cloud</span></div>
+            <div class="insight-bar" style="height:78%"><span>Data</span></div>
+            <div class="insight-bar" style="height:65%"><span>Web3</span></div>
+            <div class="insight-bar" style="height:60%"><span>Cyber</span></div>
+            <div class="insight-bar" style="height:40%"><span>QA</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">AI Decision Explanation</div>
+        <div class="ai-explanation" style="margin-top:0">
+          <h4>🧠 Why ML Engineer?</h4>
+          <p>Your strong foundation in <strong>Python (92%)</strong>, <strong>Statistics (85%)</strong>, and <strong>Linear Algebra (80%)</strong> closely aligns with ML Engineer requirements. Your academic projects in neural networks and data pipeline experience give you a <strong>87% match score</strong>. The remaining gap is primarily in production deployment and cloud infrastructure.</p>
+        </div>
+        <div class="ai-explanation">
+          <h4>📈 Growth Trajectory</h4>
+          <p>ML Engineering roles are projected to grow <strong>40% by 2028</strong>. Your profile positions you in the <strong>top 15%</strong> of candidates at your experience level. Completing the recommended roadmap could place you in the <strong>top 5%</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SKILL GAP ═══════════ -->
+<section class="page" id="page-skills">
+  <div class="container skill-gap">
+    <div class="section-label">Skill Analysis</div>
+    <h2 class="section-title">Skill Gap Analysis</h2>
+    <p class="section-sub">See where you stand and what you need to reach your target career.</p>
+
+    <div class="skill-comparison">
+      <div class="card">
+        <div class="card-title">Your Current Skills</div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Python</span><span>92%</span></div><div class="skill-bar"><div class="fill fill-current" style="width:92%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Statistics</span><span>85%</span></div><div class="skill-bar"><div class="fill fill-current" style="width:85%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>SQL</span><span>78%</span></div><div class="skill-bar"><div class="fill fill-current" style="width:78%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Data Visualization</span><span>75%</span></div><div class="skill-bar"><div class="fill fill-current" style="width:75%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Git & Version Control</span><span>70%</span></div><div class="skill-bar"><div class="fill fill-current" style="width:70%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Linear Algebra</span><span>80%</span></div><div class="skill-bar"><div class="fill fill-current" style="width:80%"></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Required for ML Engineer</div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>TensorFlow / PyTorch</span><span>90%</span></div><div class="skill-bar"><div class="fill fill-required" style="width:90%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Cloud Platforms (AWS/GCP)</span><span>85%</span></div><div class="skill-bar"><div class="fill fill-required" style="width:85%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>MLOps & CI/CD</span><span>80%</span></div><div class="skill-bar"><div class="fill fill-required" style="width:80%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Docker & Kubernetes</span><span>75%</span></div><div class="skill-bar"><div class="fill fill-required" style="width:75%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>System Design</span><span>70%</span></div><div class="skill-bar"><div class="fill fill-required" style="width:70%"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-label"><span>Model Deployment</span><span>85%</span></div><div class="skill-bar"><div class="fill fill-required" style="width:85%"></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Skill Status Overview</div>
+      <div style="margin-bottom:16px;font-size:0.85rem;color:var(--text-muted)">Skills you have vs skills you need to develop</div>
+      <div class="missing-skills">
+        <span class="skill-tag has">✓ Python</span>
+        <span class="skill-tag has">✓ Statistics</span>
+        <span class="skill-tag has">✓ SQL</span>
+        <span class="skill-tag has">✓ Linear Algebra</span>
+        <span class="skill-tag has">✓ Git</span>
+        <span class="skill-tag has">✓ Data Viz</span>
+        <span class="skill-tag missing">✗ TensorFlow</span>
+        <span class="skill-tag missing">✗ AWS / GCP</span>
+        <span class="skill-tag missing">✗ Docker</span>
+        <span class="skill-tag missing">✗ MLOps</span>
+        <span class="skill-tag missing">✗ System Design</span>
+        <span class="skill-tag missing">✗ Model Deployment</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ROADMAP ═══════════ -->
+<section class="page" id="page-roadmap">
+  <div class="container roadmap">
+    <div class="section-label">Learning Path</div>
+    <h2 class="section-title">Your Personalized Roadmap</h2>
+    <p class="section-sub">AI-generated step-by-step plan to become a Machine Learning Engineer.</p>
+
+    <div class="timeline">
+      <div class="timeline-item completed">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <h4>✅ Python Fundamentals & Data Libraries</h4>
+          <p>Master NumPy, Pandas, and Matplotlib for data manipulation and visualization.</p>
+          <div class="timeline-meta"><span>📅 Completed</span><span>⏱ 4 weeks</span><span>📜 Python Data Science Certificate</span></div>
+        </div>
+      </div>
+      <div class="timeline-item completed">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <h4>✅ Statistics & Mathematics</h4>
+          <p>Probability, hypothesis testing, linear algebra, and calculus for ML foundations.</p>
+          <div class="timeline-meta"><span>📅 Completed</span><span>⏱ 6 weeks</span><span>📜 Stanford Stats Certificate</span></div>
+        </div>
+      </div>
+      <div class="timeline-item completed">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <h4>✅ Machine Learning Fundamentals</h4>
+          <p>Supervised/unsupervised learning, model evaluation, feature engineering.</p>
+          <div class="timeline-meta"><span>📅 Completed</span><span>⏱ 8 weeks</span><span>📜 Andrew Ng's ML Course</span></div>
+        </div>
+      </div>
+      <div class="timeline-item active">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card" style="border-color:rgba(0,206,201,0.3)">
+          <h4>🔄 Deep Learning & TensorFlow</h4>
+          <p>Neural networks, CNNs, RNNs, transformers using TensorFlow and PyTorch.</p>
+          <div class="timeline-meta"><span>📅 In Progress</span><span>⏱ 8 weeks</span><span>📜 TensorFlow Developer Certificate</span></div>
+          <div class="progress-bar" style="margin-top:12px"><div class="progress-fill" style="width:40%"></div></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <h4>Cloud Platforms & Infrastructure</h4>
+          <p>AWS SageMaker, GCP Vertex AI, cloud deployment, and serverless ML.</p>
+          <div class="timeline-meta"><span>📅 Upcoming</span><span>⏱ 6 weeks</span><span>📜 AWS ML Specialty</span></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <h4>MLOps & Production Systems</h4>
+          <p>Docker, Kubernetes, CI/CD pipelines, model monitoring, A/B testing.</p>
+          <div class="timeline-meta"><span>📅 Upcoming</span><span>⏱ 6 weeks</span><span>📜 MLOps Specialization</span></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <h4>Portfolio & Interview Prep</h4>
+          <p>Build 3 production-grade ML projects, practice system design interviews.</p>
+          <div class="timeline-meta"><span>📅 Upcoming</span><span>⏱ 4 weeks</span><span>🎯 Job Ready</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SIMULATOR ═══════════ -->
+<section class="page" id="page-simulator">
+  <div class="container simulator">
+    <div class="section-label">Career Simulator</div>
+    <h2 class="section-title">What If You Learn New Skills?</h2>
+    <p class="section-sub">Toggle skills on/off and watch your career predictions update in real-time.</p>
+
+    <div class="sim-layout">
+      <div class="sim-controls card">
+        <div class="card-title">Add Skills</div>
+        <div class="skill-toggle" data-skill="tensorflow" data-boost="8"><div class="skill-toggle-info"><h4>TensorFlow / PyTorch</h4><span>+8% to ML careers</span></div><div class="toggle-switch"></div></div>
+        <div class="skill-toggle" data-skill="cloud" data-boost="6"><div class="skill-toggle-info"><h4>Cloud Platforms (AWS)</h4><span>+6% to all careers</span></div><div class="toggle-switch"></div></div>
+        <div class="skill-toggle" data-skill="docker" data-boost="5"><div class="skill-toggle-info"><h4>Docker & Kubernetes</h4><span>+5% to engineering roles</span></div><div class="toggle-switch"></div></div>
+        <div class="skill-toggle" data-skill="mlops" data-boost="7"><div class="skill-toggle-info"><h4>MLOps & CI/CD</h4><span>+7% to ML Engineer</span></div><div class="toggle-switch"></div></div>
+        <div class="skill-toggle" data-skill="sysdesign" data-boost="4"><div class="skill-toggle-info"><h4>System Design</h4><span>+4% to senior roles</span></div><div class="toggle-switch"></div></div>
+        <div class="skill-toggle" data-skill="deploy" data-boost="5"><div class="skill-toggle-info"><h4>Model Deployment</h4><span>+5% to ML careers</span></div><div class="toggle-switch"></div></div>
+      </div>
+      <div class="card sim-result">
+        <div class="card-title">Predicted Success</div>
+        <div class="sim-result-score" id="simScore">65%</div>
+        <div class="sim-result-label">Career Readiness Score</div>
+        <div class="sim-careers">
+          <div class="card-title" style="margin-top:16px">Updated Career Matches</div>
+          <div class="sim-career-item"><span>ML Engineer</span><span id="sim-ml">87%</span></div>
+          <div class="sim-career-item"><span>Data Scientist</span><span id="sim-ds">82%</span></div>
+          <div class="sim-career-item"><span>AI Researcher</span><span id="sim-ai">74%</span></div>
+          <div class="sim-career-item"><span>Full-Stack Dev</span><span id="sim-fs">68%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>© 2026 CareerForge AI — Built with intelligence. Designed for your future.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
