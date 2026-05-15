@@ -3,12 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import styles from '../page.module.css';
-import { useLang } from '@/i18n/LanguageProvider';
+import { useLanguage } from '@/i18n/LanguageProvider';
 
 export default function StudentSignup() {
   const router = useRouter();
-  const { t } = useLang();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -59,74 +58,83 @@ export default function StudentSignup() {
         router.push('/onboarding');
       }
     } catch (err) {
-      setError(t('auth.error_generic'));
+      setError(t('common.error'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '40px auto', padding: '20px' }}>
-      <h1>{t('auth.signup_title')}</h1>
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.name')}</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">{t('auth.student_signup')}</h1>
+        <p className="auth-subtitle">{t('auth.have_account')} <Link href="/login">{t('auth.sign_in_link')}</Link></p>
+        
+        {error && <div className="field-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">{t('auth.name')}</label>
+            <input
+              type="text"
+              className="input"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('auth.email')}</label>
+            <input
+              type="email"
+              className="input"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('auth.phone')}</label>
+            <input
+              type="text"
+              className="input"
+              placeholder={t('auth.phone_hint')}
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('auth.password')}</label>
+            <input
+              type="password"
+              className="input"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('auth.confirm_password')}</label>
+            <input
+              type="password"
+              className="input"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              required
+            />
+          </div>
+          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={loading}>
+            {loading ? t('auth.creating_account') : t('auth.signup')}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          <p>{t('auth.or_corporate')}</p>
+          <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            <Link href="/corporate/signup">{t('auth.corporate_signup')}</Link>
+          </div>
         </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.email')}</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.phone_placeholder')}</label>
-          <input
-            type="text"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.password')}</label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.confirm_password')}</label>
-          <input
-            type="password"
-            value={formData.confirmPassword}
-            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
-        </div>
-        <button type="submit" disabled={loading} style={{ padding: '10px', background: '#0070f3', color: 'white', border: 'none', cursor: 'pointer' }}>
-          {loading ? t('auth.signing_up') : t('auth.signup')}
-        </button>
-      </form>
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <p>{t('auth.have_account')} <Link href="/login" style={{ color: '#0070f3' }}>{t('auth.sign_in_link')}</Link></p>
-        <p style={{ marginTop: '10px' }}><Link href="/corporate/signup" style={{ color: '#0070f3' }}>{t('auth.iam_corporate')}</Link></p>
       </div>
     </div>
   );

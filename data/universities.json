@@ -1,0 +1,57 @@
+[
+  {
+    "key": "ksu",
+    "name_en": "King Saud University",
+    "name_ar": "جامعة الملك سعود"
+  },
+  {
+    "key": "kau",
+    "name_en": "King Abdulaziz University",
+    "name_ar": "جامعة الملك عبدالعزيز"
+  },
+  {
+    "key": "kfupm",
+    "name_en": "King Fahd University of Petroleum & Minerals",
+    "name_ar": "جامعة الملك فهد للبترول والمعادن"
+  },
+  {
+    "key": "iau",
+    "name_en": "Imam Abdulrahman Bin Faisal University",
+    "name_ar": "جامعة الإمام عبدالرحمن بن فيصل"
+  },
+  {
+    "key": "pnu",
+    "name_en": "Princess Nourah Bint Abdulrahman University",
+    "name_ar": "جامعة الأميرة نورة بنت عبدالرحمن"
+  },
+  {
+    "key": "ksau-hs",
+    "name_en": "King Saud bin Abdulaziz University for Health Sciences",
+    "name_ar": "جامعة الملك سعود بن عبدالعزيز للعلوم الصحية"
+  },
+  {
+    "key": "kfu",
+    "name_en": "King Faisal University",
+    "name_ar": "جامعة الملك فيصل"
+  },
+  {
+    "key": "kku",
+    "name_en": "King Khalid University",
+    "name_ar": "جامعة الملك خالد"
+  },
+  {
+    "key": "uqu",
+    "name_en": "Umm Al-Qura University",
+    "name_ar": "جامعة أم القرى"
+  },
+  {
+    "key": "imamu",
+    "name_en": "Imam Muhammad ibn Saud Islamic University",
+    "name_ar": "جامعة الإمام محمد بن سعود الإسلامية"
+  },
+  {
+    "key": "taibah",
+    "name_en": "Taibah University",
+    "name_ar": "جامعة طيبة"
+  }
+]

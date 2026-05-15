@@ -1,0 +1,22 @@
+[
+  { "key": "ml_engineer", "name_en": "Machine Learning Engineer", "name_ar": "مهندس تعلم آلي", "cluster": "tech" },
+  { "key": "data_scientist", "name_en": "Data Scientist", "name_ar": "عالم بيانات", "cluster": "tech" },
+  { "key": "ai_researcher", "name_en": "AI Researcher", "name_ar": "باحث ذكاء اصطناعي", "cluster": "tech" },
+  { "key": "full_stack_dev", "name_en": "Full-Stack Developer", "name_ar": "مطور تطبيقات متكاملة", "cluster": "tech" },
+  { "key": "devops_engineer", "name_en": "DevOps Engineer", "name_ar": "مهندس عمليات تطوير", "cluster": "tech" },
+  { "key": "mobile_dev", "name_en": "Mobile Developer", "name_ar": "مطور تطبيقات جوال", "cluster": "tech" },
+  { "key": "cyber_security", "name_en": "Cybersecurity Analyst", "name_ar": "محلل أمن سيبراني", "cluster": "tech" },
+  { "key": "product_manager", "name_en": "Product Manager", "name_ar": "مدير منتج", "cluster": "tech" },
+
+  { "key": "civil_engineer", "name_en": "Civil Engineer", "name_ar": "مهندس مدني", "cluster": "engineering" },
+  { "key": "mechanical_engineer", "name_en": "Mechanical Engineer", "name_ar": "مهندس ميكانيكي", "cluster": "engineering" },
+  { "key": "electrical_engineer", "name_en": "Electrical Engineer", "name_ar": "مهندس كهربائي", "cluster": "engineering" },
+  { "key": "chemical_engineer", "name_en": "Chemical Engineer", "name_ar": "مهندس كيميائي", "cluster": "engineering" },
+  { "key": "industrial_engineer", "name_en": "Industrial Engineer", "name_ar": "مهندس صناعي", "cluster": "engineering" },
+
+  { "key": "general_physician", "name_en": "General Physician", "name_ar": "طبيب عام", "cluster": "medicine" },
+  { "key": "surgeon", "name_en": "Surgeon", "name_ar": "جراح", "cluster": "medicine" },
+  { "key": "dentist", "name_en": "Dentist", "name_ar": "طبيب أسنان", "cluster": "medicine" },
+  { "key": "pharmacist", "name_en": "Pharmacist", "name_ar": "صيدلي", "cluster": "medicine" },
+  { "key": "nurse", "name_en": "Nurse", "name_ar": "ممرض", "cluster": "medicine" }
+]

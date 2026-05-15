@@ -219,6 +219,13 @@ CREATE TABLE applications (
   rejection_primary_reason TEXT,
   rejection_gap_tags JSONB,     -- array of skill tags
   rejection_comment TEXT,
+  -- AI fit summary cache (Section 9.9, generated on first corporate view, regeneratable):
+  fit_summary_en TEXT,
+  fit_summary_ar TEXT,
+  fit_summary_risk_flags JSONB,                       -- array of kebab-case tags
+  fit_summary_recommended_action TEXT
+    CHECK (fit_summary_recommended_action IS NULL OR fit_summary_recommended_action IN ('advance','screen_first','decline','wait_pool')),
+  fit_summary_generated_at TIMESTAMPTZ,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   status_changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (job_id, student_id)
@@ -282,6 +289,14 @@ CREATE TABLE student_skills (
   reasoning_ar TEXT NOT NULL,
   iteration_count INT NOT NULL DEFAULT 0,            -- how many feedback rounds it took
   fully_approved BOOLEAN NOT NULL DEFAULT true,      -- false if 5-iteration cap was hit
+  -- skill validation (mini-check via Claude scenario questions, applies to High-level claims):
+  validation_status TEXT NOT NULL DEFAULT 'not_required'
+    CHECK (validation_status IN ('not_required','skipped','validated','dropped','failed')),
+  validation_questions JSONB,                        -- the 2-3 scenarios Claude generated, per Section 9.8
+  validation_responses JSONB,                        -- the student's typed answers
+  validation_score NUMERIC(4,2),                     -- Claude's avg score 0-10 across the responses
+  validation_notes TEXT,                             -- Claude's reasoning (shown on hover)
+  validated_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (student_id, skill_key)
@@ -400,7 +415,17 @@ Sections, top to bottom (transcript LAST to avoid blocking on Vision API):
 **Section C — Experience**
 - Employment / training experience (free-text textarea + chip prompts)
 - Experiences list: certificates, training programs, hackathons, events, internships
-  - "Add experience" → form with type chips, title, issuer, date, status defaults to `unverified`. v1 has no AI cert inspection — marking verification is manual / admin-only.
+  - "Add experience" → form with type chips, title, issuer, date.
+  - **For type ∈ {certificate, training, internship}:** the form also shows an optional **"Upload certificate image"** field (jpg / png, max 5MB). Hackathons and events have no upload field (no verifiable artifact expected). If the student uploads an image:
+    - File goes to POST `/api/students/experiences/verify` (multipart, along with the claimed type/title/issuer/date the student typed).
+    - Server converts to base64 and calls **Claude Vision (#7 — see Section 9.7)** with a focused inspection prompt: does this image actually show a certificate matching the claimed fields?
+    - Loading state shown for 5–15 seconds: *"Verifying your certificate..."*
+    - Server applies clear thresholds and writes the experience row in one shot:
+      - `confidence ≥ 0.85` AND title + issuer both match → `verification_status='verified'`, `verification_method='ai_inspection'`, `verification_confidence` saved, green "Verified ✓" badge with confidence shown on hover.
+      - `0.6 ≤ confidence < 0.85` OR partial match → `verification_status='pending'` with `verification_notes` saved (yellow badge, hover shows what was uncertain).
+      - `confidence < 0.6` OR clear mismatch (e.g., image is a screenshot of a different cert, or unreadable) → `verification_status='rejected'` with `verification_notes` explaining why. The row still saves so the student doesn't lose their typed data — they can re-upload a better image.
+    - After a successful verification, server triggers `/api/readiness/recompute` → `dim_credentialing` reflects the new verified cert (verified counts 20 vs unverified's 5 in the Section 8.1 formula, so the readiness ring visibly lifts).
+  - If the student skips the image upload: row saves with `verification_status='unverified'` (still gets the 5-point pending contribution to `dim_credentialing`).
 
 **Section D — Academic transcript** (last)
 - "Upload transcript image" button (jpg / png only).
@@ -433,11 +458,43 @@ The conversational flow:
    - The AI description (current language).
    - **Three level chips: Low / Mid / High.** The AI's suggested level is pre-selected. **The student can change it.** This is the student's call, not the AI's.
    - Two action buttons:
-     - **"Save with this level"** (green) → persists to `student_skills`. `proficiency_score` is derived: Low → 30, Mid → 60, High → 90. Input clears for next skill.
+     - **"Save with this level"** (green) → behavior depends on level:
+       - If Low or Mid: persists directly to `student_skills` with `validation_status='not_required'`. `proficiency_score` is derived (Low → 30, Mid → 60). Input clears for next skill.
+       - **If High: opens the Skill Validation Mini-Check modal** (see Validation flow below) BEFORE saving. The save happens only after the modal completes.
      - **"Not quite..."** → expands a textarea for refinement.
 5. If "Not quite...": student types correction → Claude regenerates description + suggested level with the new context → loop.
 6. **5-iteration hard cap per skill.** On iteration 5 the latest output auto-saves with `fully_approved = false` and a small "needs review" badge on the row. Protects the Anthropic API budget from indecision loops.
 7. "Done adding skills" link closes the section.
+
+**Skill Validation Mini-Check (when student claims High proficiency):**
+
+This is the layer that makes High proficiency claims honest — instead of trusting self-reporting, Claude probes with realistic scenarios.
+
+1. Modal opens with header *"Quick check — let's verify your High level"* / *"تحقق سريع — لنتأكد من مستوى متقدم"*.
+2. Loading state: *"Generating quick scenarios..."* (3–8 seconds).
+3. **Real Claude call (#8a — see Section 9.8)** generates 2–3 short scenario questions tailored to the skill and the student's cluster. Example for Python in Tech cluster: *"You have a 10M row table in production and a SELECT query taking 8 seconds. What's your first move?"*
+4. Modal displays the questions, each with a textarea (min 30 chars). Student answers in 1–2 sentences per question.
+5. "Submit answers" button → loading state *"Scoring your responses..."* (5–10 seconds).
+6. **Real Claude call (#8b — see Section 9.8)** scores each response 0–10 and returns:
+   - Per-question scores
+   - Average score
+   - Plain-language reasoning (current language)
+   - Recommendation: `confirm_high` if avg ≥ 7.0, `suggest_mid` if 4.0 ≤ avg < 7.0, `suggest_low` if avg < 4.0.
+7. Result screen depending on recommendation:
+   - **confirm_high** → green "✓ Validated High" badge in the modal. Save button: "Save as High (validated)". Row persists with `validation_status='validated'`, full score, notes, validated_at, `proficiency_level='high'`.
+   - **suggest_mid** → yellow info card showing Claude's reasoning. Two save buttons side by side: **"Save as Mid (recommended)"** (highlighted) which saves with `proficiency_level='mid'` + `validation_status='dropped'` + the score/notes for transparency; OR **"Keep as High anyway"** (gray) which saves with `proficiency_level='high'` + `validation_status='failed'` + the score/notes. The student has the final word, but the data records what happened.
+   - **suggest_low** → same pattern as suggest_mid but recommendation is Low.
+8. **"Skip validation"** link in the modal — saves with `validation_status='skipped'`, level stays as the student claimed. No questions asked. Allowed for students who don't want to be probed.
+
+**5-question hard cap.** Validation generates max 3 questions. The whole modal flow is one round-trip in, one round-trip out — no iteration loops on validation. Keeps cost bounded.
+
+**Effect on the readiness math (per Section 8.1).** In `dim_domain`:
+- A `validated` High contributes the full per-skill points (base 9 × market_multiplier, capped 20).
+- A `failed` or `skipped` High contributes 75% of those points. Same penalty whether the student declined to validate or validated and overrode the recommendation — both are equally unverified claims.
+- A `dropped` High auto-converted to Mid contributes Mid's points (base 6 × market_multiplier) — same as any other Mid.
+- Low and Mid claims are unaffected (validation only applies to High).
+
+This is what makes the score honest: a student who validates two High skills will out-rank a student who claims five unvalidated Highs, even though "5 > 2". And that's the right answer for a hiring market.
 
 **Section B — Your current skills + Required for [target role]**
 
@@ -447,6 +504,7 @@ The conversational flow:
   - Skill name
   - Level chip (Low / Mid / High)
   - Bar with percentage
+  - **Validation badge (High only):** green "✓ Validated" if `validation_status='validated'`; gray "Unvalidated" if `validation_status` is `'skipped'` or `'failed'`; subtle "↓ from High" if `validation_status='dropped'`. Hover on the badge shows Claude's reasoning + score. Mid and Low rows don't show a validation badge.
   - **🔥 "In demand" badge** if this skill is required by **3 or more open jobs** in the student's cluster. This is the visible market influence.
   - (i) info icon → opens skill detail modal.
 - Below the manually-added skills, dimmer rows show skills derived from courses / experiences / interests that the student hasn't explicitly added (informational only — no level chip, no edit option).
@@ -596,7 +654,14 @@ On submit:
 
 ### 6.5 Applicant detail
 - Full profile view.
-- Strengths and gaps breakdown.
+- Strengths and gaps breakdown (deterministic, computed from dimension delta + skill overlap).
+- **AI Fit Summary card** (NEW — Claude #9, see Section 9.9):
+  - Header: *"AI Assessment"* / *"تقييم الذكاء الاصطناعي"* with a small "Generated by Claude" caption.
+  - 2–3 sentence plain-language summary in the corporate's current language. Mentions one specific strength, one concrete concern, and a 1-line hiring recommendation.
+  - Risk flags row: 0–3 small chips with kebab-case tags (e.g., *"limited-production-experience"*, *"unvalidated-key-skills"*).
+  - Recommended action badge: green "Advance" / yellow "Screen first" / gray "Wait pool" / red "Decline".
+  - "Regenerate" button visible only if the student's profile was updated after this summary was cached. Triggers a fresh Claude call and overwrites the cached summary.
+  - First view of an applicant generates the summary live (5–10 second loading state); subsequent views read from the cache in the `applications` table.
 - Action buttons:
   - "Move to under review" → updates status only.
   - **"Schedule interview" → updates status to `interview` AND triggers Resend email to the student** ("You have an interview for [job title] at [company]. The company will contact you within 48 hours at [student phone] or [student email]."). Email template: bilingual with student's `language_pref`.
@@ -632,7 +697,8 @@ Submit → POST `/api/corporates/applications/[id]/reject` → updates `applicat
 - `PATCH /api/students/profile` — update any subset of fields.
 - `POST /api/students/transcript/parse` — multipart with image. Returns `{ courses: [...] }`. **Real Claude Vision call.**
 - `POST /api/students/courses` — body: array of courses. Replaces or appends.
-- `POST /api/students/experiences` — body: `{ type, title, issuer, date }`. No image / no Claude call in v1.
+- `POST /api/students/experiences` — multipart-capable. Required fields: `{ type, title, issuer, date }`. **Optional** file part `cert_image` (jpg / png, max 5MB) for `type ∈ {certificate, training, internship}`. If an image is included, server calls Claude Vision (#7, see Section 9.7) to verify the image matches the claimed fields, then writes the experience row in one shot with `verification_status` set to `'verified'` / `'pending'` / `'rejected'` based on the thresholds in Section 5.4 Section C. If no image, row is written with `verification_status='unverified'`. Triggers `/api/readiness/recompute` on every successful save.
+- `DELETE /api/students/experiences/[id]` — removes one experience row.
 
 ### Readiness
 - `GET /api/readiness` — returns current student's 8-dim breakdown + general score.
@@ -653,7 +719,9 @@ Submit → POST `/api/corporates/applications/[id]/reject` → updates `applicat
 - `GET /api/skills/current` — returns student_skills rows joined with computed `market_demand_count` (count of open jobs in student's cluster requiring each skill). Used to render the bars and "🔥 In demand" badges.
 - `GET /api/skills/required` — returns aggregated required skills for the student's target role from open jobs.
 - `POST /api/skills/describe` — body: `{ skill_input: string, iteration_history?: [{ai_output, student_feedback}] }`. **Real Claude call (#5)** generates description + suggested level + reasoning. Returns the AI output JSON. Does NOT persist — only persists when student confirms via `/api/skills/save`.
-- `POST /api/skills/save` — body: `{ skill_key, skill_canonical_name, description_en, description_ar, proficiency_level, ai_suggested_level, reasoning_en, reasoning_ar, iteration_count, fully_approved }`. Persists to `student_skills`. Triggers `/api/readiness/recompute` (so the dashboard readiness updates).
+- `POST /api/skills/validate-start` — body: `{ skill_key, skill_canonical_name, description_en, student_cluster, student_year }`. **Real Claude call (#8a — see Section 9.8)** generates 2-3 scenario questions for this skill, tailored to the student's cluster and year. Returns `{ questions: [{ id, question_en, question_ar }] }`. Does NOT persist. Called only when student tries to save with level=High.
+- `POST /api/skills/validate-score` — body: `{ skill_canonical_name, questions, responses: [{ question_id, answer_text }] }`. **Real Claude call (#8b — see Section 9.8)** scores each response 0-10. Returns `{ scores: [{ question_id, score, feedback }], avg_score, reasoning_en, reasoning_ar, recommendation: 'confirm_high'|'suggest_mid'|'suggest_low' }`. Does NOT persist.
+- `POST /api/skills/save` — body: `{ skill_key, skill_canonical_name, description_en, description_ar, proficiency_level, ai_suggested_level, reasoning_en, reasoning_ar, iteration_count, fully_approved, validation_status?, validation_questions?, validation_responses?, validation_score?, validation_notes? }`. Persists to `student_skills`. Validation fields are optional (set only when the student went through the High validation flow, including when they skipped it). Triggers `/api/readiness/recompute` (so the dashboard readiness updates).
 - `DELETE /api/skills/[id]` — removes a skill row.
 
 ### Simulator
@@ -677,6 +745,7 @@ Submit → POST `/api/corporates/applications/[id]/reject` → updates `applicat
 - `POST /api/corporates/jobs` — create job posting. Triggers roadmap recompute for matching students; if `hiring_outcome_flag=true`, adds a new Tier-1 node to their roadmaps.
 - `GET /api/corporates/jobs` — list this corporate's jobs.
 - `GET /api/corporates/jobs/[id]/applicants` — ranked applicants list.
+- `GET /api/corporates/applications/[id]/fit-summary` — returns the cached AI fit summary for this applicant on this job. If the cache is empty OR the student's profile was updated after the cached `fit_summary_generated_at`, generates a fresh one via **Claude call (#9 — see Section 9.9)** and persists to the `applications` row. Accepts an optional `?regenerate=true` query parameter to force-regenerate. Response: `{ summary_en, summary_ar, risk_flags, recommended_action, generated_at, stale: boolean }`.
 - `POST /api/corporates/applications/[id]/status` — body: `{ status }`. For status changes. **If status = 'interview' or 'offered', sends Resend email to the student.**
 - `POST /api/corporates/applications/[id]/reject` — body: `{ primaryReason, gapTags, comment? }`. Triggers student roadmap recompute to promote gap tags.
 
@@ -714,7 +783,7 @@ All algorithms live under `lib/`. Each file has inline comments explaining the m
 - `dim_credentialing = min(100, count(verified_certs) × 20 + count(pending_certs) × 5)`
 - `dim_practical = min(100, count(internships + hackathons + events) × 15)`
 - `dim_portfolio = min(100, count(projects from interests + completed nodes with type 'project') × 10)`
-- `dim_domain` (NEW — market-aware):
+- `dim_domain` (NEW — market-aware AND validation-aware):
   ```
   dim_domain = min(100,
       courses_contribution
@@ -728,9 +797,14 @@ All algorithms live under `lib/`. Each file has inline comments explaining the m
         base = proficiency_score / 10                                         (Low=3, Mid=6, High=9)
         market_demand_count = count of open jobs in student's cluster whose required_skills includes this skill_key
         market_multiplier = 1.0 + min(1.0, market_demand_count / 5)           (1.0 → 2.0, saturates at 5+ jobs)
-        per_skill = base × market_multiplier                                  (cap 20 per skill)
+        validation_multiplier =
+            1.0  if proficiency_level != 'high'                               (Low/Mid unaffected)
+            1.0  if proficiency_level == 'high' AND validation_status == 'validated'
+            0.75 if proficiency_level == 'high' AND validation_status IN ('skipped','failed')
+            1.0  if proficiency_level == 'high' AND validation_status == 'dropped'   (this row was auto-converted to Mid, so proficiency_level is actually 'mid' here — never reaches the High branch)
+        per_skill = base × market_multiplier × validation_multiplier          (cap 20 per skill)
   ```
-  The market_multiplier is what makes the readiness number market-aware. A High-proficiency skill required by 5+ jobs contributes 18 points; a High-proficiency skill required by 0 jobs contributes 9 points. When corporates post new jobs requiring skills the student has, dim_domain (and therefore general_readiness) ticks up on next recompute.
+  Two multipliers, both honest: market_multiplier is what makes the readiness number market-aware (a High-proficiency Python skill required by 5+ jobs contributes 18 points; one required by 0 jobs contributes 9 points). validation_multiplier is what makes High claims honest — a validated High contributes the full 9 base, an unvalidated High (skipped or overridden after failing) contributes 0.75 × 9 = 6.75 base. **The compound effect:** a student with 2 validated Highs in market-demand skills will out-score a student with 5 unvalidated Highs, which is the right ordering for a hiring market. When corporates post new jobs requiring skills the student has, dim_domain ticks up on next recompute. When the student validates a previously-unvalidated High, dim_domain ticks up immediately on that save.
 - `dim_prof_dev = min(100, count(experiences of type 'event' or 'hackathon') × 20)`
 - `dim_soft_skills = avg(mock_interview_total_scores) || 0`
 
@@ -812,7 +886,7 @@ Free-text specialty → cluster mapping. Simple keyword match:
 
 ---
 
-## 9. Claude API Integrations (6 Distinct Calls)
+## 9. Claude API Integrations (9 Distinct Calls)
 
 All prompts live in `lib/prompts/*.ts`. Each is a TypeScript function returning a `{ system, messages }` object. Each call uses Claude Sonnet 4.6 (`claude-sonnet-4-5-20250929` — confirm in Antigravity before build) with structured JSON output where applicable.
 
@@ -939,6 +1013,173 @@ The response is shown to the student. The student picks Low / Mid / High themsel
 
 **Caching.** Result cached client-side for the current page-view session. Re-fetched if the student navigates away and back. Not persisted server-side — only the steps the student explicitly clicks "Add to my Roadmap" on become `roadmap_nodes` rows.
 
+### 9.7 Certificate inspection (`lib/prompts/cert-inspection.ts`) — Claude #7
+
+**Purpose.** When a student uploads a certificate image alongside an experience entry in `/profile` Section C (see Section 5.4), Claude Vision inspects the image to confirm the claimed type / title / issuer / date actually match what the image shows. This is the verification layer that prevents resume inflation — and it's what makes `dim_credentialing` in Section 8.1 actually meaningful (a verified cert is worth 20 points vs an unverified cert's 5).
+
+**Input:**
+- The uploaded image (base64).
+- The student's typed claim: type (certificate / training / internship), title, issuer, date_completed.
+
+**Prompt (abbreviated):**
+> You are inspecting a credential image to verify it matches what the student claims. The student typed:
+> - Type: [type]
+> - Title: [title]
+> - Issuer: [issuer]
+> - Date: [date]
+>
+> Look at the attached image and return ONLY this JSON:
+> ```
+> {
+>   "verified": true | false,
+>   "confidence": 0.0 to 1.0,
+>   "extracted_title": "what you read on the image",
+>   "extracted_issuer": "what you read on the image",
+>   "extracted_date": "YYYY-MM-DD or null",
+>   "image_type": "certificate" | "training_completion" | "internship_letter" | "other" | "unclear",
+>   "match_title": true | false,
+>   "match_issuer": true | false,
+>   "notes": "one short sentence: what you saw and any concerns"
+> }
+> ```
+>
+> Rules:
+> - `verified=true` ONLY if you can clearly read a real credential matching the claimed title AND issuer with high confidence (≥0.85). Otherwise `verified=false`.
+> - Treat screenshots of badges, LinkedIn profile crops, certificates of attendance, and decorative templates as low confidence (< 0.6) unless they bear clear credential markings.
+> - Arabic-language certs are valid — read both Arabic and English text.
+> - If the image is blurry, cropped, or clearly not a credential, set `image_type='unclear'` and `confidence < 0.4`.
+> - Be honest. False positives are worse than false negatives — when in doubt, lower the confidence.
+
+**Output validation.** Parse as JSON, validate with Zod, retry once on malformed response, then fail with a real error (status row written with `verification_status='unverified'` and a note to the user that automatic verification couldn't complete — the row still saves).
+
+**Server-side thresholds (applied in the route handler, not the prompt):**
+- `confidence ≥ 0.85` AND `match_title=true` AND `match_issuer=true` → `verification_status='verified'`, `verification_method='ai_inspection'`.
+- `0.6 ≤ confidence < 0.85` OR only one of title/issuer matches → `verification_status='pending'`.
+- `confidence < 0.6` OR both match flags false → `verification_status='rejected'`.
+
+Notes from Claude are saved to `verification_notes` in all cases so the student sees actionable feedback (*"I see a Coursera certificate but the title reads 'IBM Data Science' not 'Google Data Analytics'"*).
+
+### 9.8 Skill Validation Mini-Check (`lib/prompts/skill-validation.ts`) — Claude #8
+
+**Purpose.** When a student claims **High** proficiency on a skill via the conversational flow on `/skills` (Section 5.5), the mini-check probes that claim with 2–3 short scenario questions. The student answers in their own words, Claude scores the responses, and the system either confirms the High or recommends dropping to Mid (the student still has the final word). This is what makes High claims defensible in a way no other career platform does — and what makes the `dim_domain` math honest (a validated High is worth more than an unvalidated High per Section 8.1).
+
+This is a single integration with two sequential Claude calls (one prompt file, two exported functions, two API routes — see Section 7).
+
+#### 9.8a Question generation prompt — `buildValidationQuestionsPrompt({ skill_canonical_name, description_en, student_cluster, student_year })`
+
+**Prompt (abbreviated):**
+> A Saudi student in [cluster] cluster, year [year], is claiming **High proficiency** in [skill_canonical_name]. Skill context: [description_en].
+>
+> Generate **2 or 3** short scenario questions that would distinguish a real High-level practitioner from someone who only knows the basics. Questions must:
+> - Be realistic Saudi workplace scenarios (not textbook trivia).
+> - Each be answerable in 1–2 sentences (no multi-paragraph essays).
+> - Probe judgment / first-instinct decisions, not memorized definitions.
+> - Cover different facets of the skill (not three variants of the same question).
+>
+> Return ONLY this JSON:
+> ```
+> {
+>   "questions": [
+>     {
+>       "id": "q1",
+>       "question_en": "...",
+>       "question_ar": "..."
+>     },
+>     // 1-2 more
+>   ]
+> }
+> ```
+> Example for "Python" (Tech cluster, year 4): *"You have a production table with 10M rows and a SELECT query taking 8 seconds. What's the first thing you check?"* — probes indexing/EXPLAIN intuition in one sentence.
+>
+> Bias toward scenarios common in Saudi tech/medicine/engineering employers (Aramco, STC, KFSH, NEOM, etc.). Return ONLY valid JSON, no prose.
+
+**Output validation.** Zod schema for 2-3 questions, each with id, question_en, question_ar. Retry once on malformed JSON; on second failure return 500 with a real error — the modal shows "Validation couldn't generate questions right now. You can save as High and validate later, or pick a lower level." No fake question fallback.
+
+#### 9.8b Response scoring prompt — `buildValidationScoringPrompt({ skill_canonical_name, questions, responses, student_cluster, student_year })`
+
+**Prompt (abbreviated):**
+> A student claimed High proficiency in [skill_canonical_name] and answered the following scenario questions. Score each response on a 0–10 scale based on whether it reflects genuine High-level competence (real practitioner judgment) vs. surface-level knowledge.
+>
+> Questions and student responses:
+> Q1: [question_en]
+> Student answer: [answer_text]
+> Q2: [question_en]
+> Student answer: [answer_text]
+> ...
+>
+> Scoring rubric (for each question):
+> - 9-10: Specific, accurate, shows real-world judgment. References concrete tools/tradeoffs.
+> - 6-8: Reasonable answer, broadly correct but generic or missing nuance.
+> - 3-5: Surface understanding. Vague, partial, or shows learning gaps.
+> - 0-2: Wrong, off-topic, or clearly guessing.
+>
+> Return ONLY this JSON:
+> ```
+> {
+>   "scores": [
+>     { "question_id": "q1", "score": 0-10, "feedback_en": "...", "feedback_ar": "..." },
+>     ...
+>   ],
+>   "avg_score": 0.0 to 10.0,
+>   "reasoning_en": "2-3 sentences explaining overall, plainly and respectfully.",
+>   "reasoning_ar": "نفس الشرح بالعربية",
+>   "recommendation": "confirm_high" | "suggest_mid" | "suggest_low"
+> }
+> ```
+>
+> Recommendation thresholds:
+> - avg_score ≥ 7.0 → "confirm_high"
+> - 4.0 ≤ avg_score < 7.0 → "suggest_mid"
+> - avg_score < 4.0 → "suggest_low"
+>
+> Be honest but not harsh. The student took the time to validate — respect that. If they're close to High, say so. If they're clearly at Mid, say that plainly with reasoning. Return ONLY valid JSON.
+
+**Output validation.** Zod schema for the scores array, avg_score, reasoning, recommendation. Retry once on malformed JSON; on second failure save the skill with `validation_status='failed'` and `validation_notes='Automatic scoring failed — skill saved at claimed level'`. No fake validation status ever.
+
+**Server-side application of the recommendation.** The recommendation is shown to the student in the modal — the **student still picks the final save action** (Save as High validated / Save as Mid recommended / Keep as High anyway / Skip). What gets persisted to `validation_status`:
+- `confirm_high` + student picks "Save as High validated" → `validated`
+- `suggest_mid` + student picks "Save as Mid (recommended)" → row saved with `proficiency_level='mid'`, `validation_status='dropped'`
+- `suggest_mid` or `suggest_low` + student picks "Keep as High anyway" → `proficiency_level='high'`, `validation_status='failed'`
+- Student picks "Skip validation" at any point → `validation_status='skipped'`
+
+Validation result is informational across the system: shown as a badge on the skill row (per Section 5.5), shown on hover with Claude's reasoning, and applied as a multiplier in `dim_domain` per Section 8.1.
+
+### 9.9 Applicant fit summary (`lib/prompts/applicant-fit-summary.ts`) — Claude #9
+
+**Purpose.** When a corporate user opens an applicant's detail page (Section 6.5) on the corporate side, this prompt generates a 2–3 sentence plain-language assessment of fit between the applicant and the job. It's a cognitive-load reducer for recruiters triaging applicants — going beyond the deterministic strengths/gaps to give natural-language risk flags and recommendations. This is the corporate-side AI moment that the platform previously lacked.
+
+**Input:**
+- Student profile snapshot: cluster, year, GPA, target_role, opportunity_types, 7-dim vector, skills list (with validation status), verified certs count, mock interview avg score, completed roadmap node count.
+- Job snapshot: title, role_category, required_skills (with importance), required_certs, required_experience_years, required_education_level, dimension_requirements.
+- Computed Job Readiness score for this applicant on this job (per Section 8.2).
+- Top 3 strengths and top 2 gaps (already computed deterministically — see Section 7).
+
+**Prompt (abbreviated):**
+> A Saudi recruiter is reviewing this applicant for a specific job and needs a quick, honest fit assessment. Do not repeat the strengths and gaps list — they are already visible to the recruiter. Add the layer they can't compute deterministically: risk flags, recommendation, and a hiring suggestion.
+>
+> Applicant: [profile snapshot].
+> Job: [job snapshot].
+> Deterministic Job Readiness: [score]%. Top strengths: [3]. Top gaps: [2].
+>
+> Return ONLY this JSON:
+> ```
+> {
+>   "summary_en": "2-3 sentences. Plain language. Honest. Mention 1 strength specific to this job, 1 concrete concern (a gap or risk flag the recruiter should probe), and a 1-line hiring recommendation.",
+>   "summary_ar": "نفس التقييم بالعربية",
+>   "risk_flags": ["short kebab-case tags, 0-3, e.g. 'limited-production-experience', 'unvalidated-key-skills', 'cert-mismatch'"],
+>   "recommended_action": "advance" | "screen_first" | "decline" | "wait_pool"
+> }
+> ```
+>
+> Example output:
+> *"Khaled has strong Python and SQL alignment for this ML Engineer role and his GPA is in the target range. Main concern: his portfolio is academic projects only — no production deployments — and his TensorFlow skill is unvalidated. Recommend a technical screen focused on production data pipelines before progressing."*
+>
+> Tone: respectful, factual. No hype, no padding. Saudi corporate recruiters value efficiency.
+
+**Output validation.** Zod schema for summary_en, summary_ar, risk_flags (array of 0-3 strings), recommended_action enum. Retry once on malformed JSON; on second failure save `summary_en='AI summary unavailable. Review the deterministic strengths and gaps above.'`, `summary_ar` analogous, empty risk_flags. The deterministic strengths/gaps still display normally, so the recruiter is never blocked.
+
+**Caching.** Result is cached in the `applications` table (new columns `fit_summary_en`, `fit_summary_ar`, `fit_summary_risk_flags`, `fit_summary_recommended_action`, `fit_summary_generated_at` — added to Section 3.9 schema). First view of an applicant generates and persists; subsequent views read from the cache. Cache invalidates if the applicant's student profile is updated after the summary was generated (`students.updated_at > fit_summary_generated_at`), in which case a "Regenerate" button is shown to the recruiter.
+
 ---
 
 ## 10. Bilingual Implementation
@@ -1047,7 +1288,10 @@ careerforge/
 │       ├── mock-interview.ts               (Section 9.3 — Claude #4)
 │       ├── insight-explanation.ts          (Section 9.4 — Claude #5 used on /insights)
 │       ├── skill-description.ts            (Section 9.5 — Claude #3 used on /skills)
-│       └── job-path.ts                     (Section 9.6 — Claude #6 used on /jobs/[id])
+│       ├── job-path.ts                     (Section 9.6 — Claude #6 used on /jobs/[id])
+│       ├── cert-inspection.ts              (Section 9.7 — Claude #7 used on /profile cert upload)
+│       ├── skill-validation.ts             (Section 9.8 — Claude #8 used on /skills High validation modal)
+│       └── applicant-fit-summary.ts        (Section 9.9 — Claude #9 used on /corporate applicant detail)
 ├── i18n/
 │   ├── en.json
 │   ├── ar.json
@@ -1085,7 +1329,7 @@ These are NOT being built. The README states each cut honestly.
 
 - ❌ Mobile responsive layout
 - ❌ Real Credly API integration
-- ❌ **Certificate AI inspection** (deferred — `student_experiences.verification_status` is manual / admin in v1)
+- ✅ **Certificate AI inspection** (NOW IN SCOPE — see Section 5.4 Section C and Section 9.7; Claude Vision verifies uploaded cert images and writes `verification_status` accordingly, lifting `dim_credentialing` for verified entries per Section 8.1)
 - ❌ Streak / decay / Pause Mode mechanics
 - ❌ Multi-user HR seats per corporate
 - ❌ Corporate ↔ student messaging beyond the interview/offer email and contact info on offer
@@ -1121,10 +1365,10 @@ All anchored to specific routes for the video recording. Each takes 20–45 seco
 - Voiceover: *"Generated live by Claude. Rules computed the gaps; AI suggested resources and wrote the readable layer."*
 - Duration: 45 seconds (speed up the onboarding clicks in editing).
 
-### Moment 2: Cert / transcript upload → readiness jump
-- Path: `/profile` → upload transcript image → Claude Vision extracts → save → return to `/dashboard` → readiness ring animates from 65% to 71%.
-- Voiceover: *"Real verification. Real Claude Vision API call. Score updates from real data."*
-- Duration: 30 seconds.
+### Moment 2: Cert + transcript upload → AI verification → readiness jump
+- Path: `/profile` Section C → click "Add experience" → type cert title + issuer → upload cert image → loading state "*Verifying your certificate...*" → green "Verified ✓" badge appears with confidence shown on hover → scroll to Section D → upload transcript image → Claude Vision extracts courses → save → return to `/dashboard` → readiness ring animates upward (the lift is bigger now because verified certs contribute 20 to `dim_credentialing` instead of unverified's 5, on top of the transcript courses contributing to `dim_domain`).
+- Voiceover: *"Two real Claude Vision calls. First Claude inspects the certificate — confirms it's real, reads the title and issuer, scores its confidence. Then Claude reads the transcript and extracts courses. Both feed real numbers into the readiness score — no inflation, no fakes."*
+- Duration: 45 seconds.
 
 ### Moment 3: Corporate-side trigger
 - Path: log out → log in as corporate → `/corporate/post-job` → fill 10 fields, mark hiring outcome → submit → log out → log in as student → `/roadmap` → new Tier-1 node visible at the top.
@@ -1158,7 +1402,7 @@ The README must be accurate and complete. AI code review will read it first.
 7. **Environment variables** — list from `.env.example`
 8. **Demo accounts** — pre-seeded student email + corporate email + how to receive OTP for them (use the seeded account's email)
 9. **Database schema** — link to migration files
-10. **AI integrations** — list all 6 Claude calls and where they live
+10. **AI integrations** — list all 9 Claude calls and where they live
 11. **Vision 2030 alignment** paragraph
 12. **License** — MIT
 13. **Contributing / Acknowledgments** — optional
@@ -1175,7 +1419,7 @@ The README must be accurate and complete. AI code review will read it first.
 ### Pre-submission checklist
 - [ ] `npm run build` succeeds with zero errors
 - [ ] No API key or secret in any commit (run `git log -p | grep -i "sk-ant\|re_\|postgres://"` to verify)
-- [ ] All 6 Claude calls work end-to-end on the deployed URL
+- [ ] All 9 Claude calls work end-to-end on the deployed URL
 - [ ] OTP email arrives in real inbox (test with a personal email)
 - [ ] Database migrations applied successfully on Neon
 - [ ] Demo accounts work on deployed URL

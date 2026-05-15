@@ -31,7 +31,12 @@ async function migrate() {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-  const sql = postgres(connectionString, { max: 1 });
+  const sql = postgres(connectionString, {
+    max: 1,
+    ssl: 'require',
+    connect_timeout: 60,
+    idle_timeout: 20,
+  });
 
   try {
     const migrationsDir = path.resolve(process.cwd(), 'db/migrations');
@@ -39,15 +44,27 @@ async function migrate() {
 
     console.log('Running migrations...');
 
+    // Postgres error codes for objects that already exist — safe to skip when
+    // re-running migrations against a DB that was already initialised.
+    const DUPLICATE_CODES = new Set(['42P07', '42701', '42710', '42P06', '42723']);
+
     for (const file of files) {
       if (file.endsWith('.sql')) {
         console.log(`Applying ${file}...`);
         const filePath = path.join(migrationsDir, file);
         const query = fs.readFileSync(filePath, 'utf8');
-        
-        // Execute the raw SQL migration
-        await sql.unsafe(query);
-        console.log(`${file} applied successfully.`);
+
+        try {
+          // Execute the raw SQL migration
+          await sql.unsafe(query);
+          console.log(`${file} applied successfully.`);
+        } catch (err: any) {
+          if (DUPLICATE_CODES.has(err?.code)) {
+            console.log(`${file} skipped — objects already exist (${err.code}).`);
+          } else {
+            throw err;
+          }
+        }
       }
     }
 

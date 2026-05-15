@@ -1,47 +1,17 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "@/styles/globals.css";
-import { LanguageProvider } from "@/i18n/LanguageProvider";
-import HtmlWrapper from "@/components/HtmlWrapper";
-import Nav from "@/components/Nav";
-import { cookies } from "next/headers";
+import '@/styles/globals.css'
+import { LanguageProvider } from '@/i18n/LanguageProvider'
+import Nav from '@/components/Nav'
+import HtmlWrapper from '@/components/HtmlWrapper'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "CareerForge AI",
-  description: "Data-Driven Career Guidance",
-};
-
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const cookieStore = await cookies();
-  const langCookie = cookieStore.get("careerforge_lang")?.value;
-  const initialLang = (langCookie === "ar" ? "ar" : "en") as "en" | "ar";
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <LanguageProvider initialLang={initialLang}>
+    <LanguageProvider>
       <HtmlWrapper>
-        <head>
-          <meta charSet="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        </head>
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          <Nav />
+        <Nav />
+        <main className="main-content">
           {children}
-        </body>
+        </main>
       </HtmlWrapper>
     </LanguageProvider>
-  );
+  )
 }

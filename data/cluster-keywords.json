@@ -1,0 +1,5 @@
+{
+  "medicine": ["medic", "pharm", "dent", "nurs", "surg", "health", "طبيب", "صيدل", "أسنان", "تمريض", "جراح", "صحي"],
+  "engineering": ["engin", "civil", "mech", "elec", "chem", "indust", "هندس", "مدني", "ميكانيك", "كهرب", "كيمي", "صناع"],
+  "tech": ["comput", "softw", "data", "ai", "ml", "info", "cyber", "حاسب", "برمج", "بيانات", "ذكاء", "معلومات", "سيبراني", "تقنية"]
+}

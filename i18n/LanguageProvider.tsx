@@ -16,10 +16,10 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ 
   children, 
-  initialLang 
+  initialLang = "en"
 }: { 
   children: React.ReactNode;
-  initialLang: Lang;
+  initialLang?: Lang;
 }) {
   const [lang, setLangState] = useState<Lang>(initialLang);
 
@@ -40,8 +40,12 @@ export function LanguageProvider({
   );
 }
 
-export const useLang = () => {
+export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (!context) throw new Error("useLang must be used within LanguageProvider");
+  if (!context) throw new Error("useLanguage must be used within LanguageProvider");
   return context;
 };
+
+// Keep useLang for backward compatibility if needed, but the user wants useLanguage
+export const useLang = useLanguage;
+

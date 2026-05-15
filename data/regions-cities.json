@@ -1,0 +1,15 @@
+[
+  { "key": "riyadh", "name_en": "Riyadh", "name_ar": "الرياض", "cities": ["Riyadh", "Al Kharj", "Diriyah", "Majmaah", "Wadi ad-Dawasir"] },
+  { "key": "makkah", "name_en": "Makkah", "name_ar": "مكة المكرمة", "cities": ["Makkah", "Jeddah", "Taif", "Rabigh", "Al Qunfudhah"] },
+  { "key": "madinah", "name_en": "Madinah", "name_ar": "المدينة المنورة", "cities": ["Madinah", "Yanbu", "AlUla", "Badr", "Mahd Al Thahab"] },
+  { "key": "eastern", "name_en": "Eastern Province", "name_ar": "المنطقة الشرقية", "cities": ["Dammam", "Khobar", "Dhahran", "Al Ahsa", "Jubail"] },
+  { "key": "qassim", "name_en": "Qassim", "name_ar": "القصيم", "cities": ["Buraidah", "Unaizah", "Ar Rass", "Al Bukayriyah", "Al Badai"] },
+  { "key": "asir", "name_en": "Asir", "name_ar": "عسير", "cities": ["Abha", "Khamis Mushait", "Bisha", "Mahayil", "Tanomah"] },
+  { "key": "tabuk", "name_en": "Tabuk", "name_ar": "تبوك", "cities": ["Tabuk", "Haql", "Duba", "Al Wajh", "Umluj"] },
+  { "key": "hail", "name_en": "Hail", "name_ar": "حائل", "cities": ["Hail", "Baqaa", "Al Ghazalah", "Al Shanan", "Moqaq"] },
+  { "key": "northern_borders", "name_en": "Northern Borders", "name_ar": "الحدود الشمالية", "cities": ["Arar", "Rafha", "Turaif", "Al Uwayqilah"] },
+  { "key": "jazan", "name_en": "Jazan", "name_ar": "جازان", "cities": ["Jazan", "Sabya", "Abu Arish", "Samtah", "Ad Darb"] },
+  { "key": "najran", "name_en": "Najran", "name_ar": "نجران", "cities": ["Najran", "Sharurah", "Hubuna", "Badr Al Janoub", "Yadamah"] },
+  { "key": "bahah", "name_en": "Al Bahah", "name_ar": "الباحة", "cities": ["Al Bahah", "Baljurashi", "Al Mandaq", "Al Makhwah", "Qilwah"] },
+  { "key": "jawf", "name_en": "Al Jawf", "name_ar": "الجوف", "cities": ["Sakaka", "Qurayyat", "Dumat Al Jandal", "Zalum", "Tubarjal"] }
+]

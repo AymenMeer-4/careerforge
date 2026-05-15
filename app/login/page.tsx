@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useLang } from '@/i18n/LanguageProvider';
+import { useLanguage } from '@/i18n/LanguageProvider';
 
 export default function Login() {
   const router = useRouter();
-  const { t } = useLang();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,7 +18,7 @@ export default function Login() {
     setError('');
 
     if (!email.trim() || !password.trim()) {
-      return setError(t('auth.error_email_password_required'));
+      return setError(t('common.error'));
     }
 
     setLoading(true);
@@ -46,46 +46,51 @@ export default function Login() {
         }
       }
     } catch (err) {
-      setError(t('auth.error_generic'));
+      setError(t('common.error'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '40px auto', padding: '20px' }}>
-      <h1>{t('auth.login_title')}</h1>
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.email')}</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>{t('auth.password')}</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '8px' }}
-            required
-          />
-        </div>
-        <button type="submit" disabled={loading} style={{ padding: '10px', background: '#0070f3', color: 'white', border: 'none', cursor: 'pointer' }}>
-          {loading ? t('auth.logging_in') : t('auth.login')}
-        </button>
-      </form>
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <p>{t('auth.no_account')}</p>
-        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
-          <Link href="/signup" style={{ color: '#0070f3' }}>{t('auth.signup_student')}</Link>
-          <Link href="/corporate/signup" style={{ color: '#0070f3' }}>{t('auth.signup_corporate')}</Link>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">{t('auth.login')}</h1>
+        <p className="auth-subtitle">{t('auth.no_account')} <Link href="/signup">{t('auth.sign_up_link')}</Link></p>
+        
+        {error && <div className="field-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">{t('auth.email')}</label>
+            <input
+              type="email"
+              className="input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('auth.password')}</label>
+            <input
+              type="password"
+              className="input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={loading}>
+            {loading ? t('auth.signing_in') : t('auth.login')}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          <p>{t('auth.or_corporate')}</p>
+          <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            <Link href="/corporate/login">{t('auth.corporate_login')}</Link>
+          </div>
         </div>
       </div>
     </div>
