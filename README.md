@@ -9,7 +9,7 @@ CareerForge scores a student across 7 readiness dimensions, generates a personal
 ## Live demo
 
 - **Live demo URL:** _to be added after deployment_
-- **Demo video:** _to be added after recording_
+
 
 ## Demo accounts
 
