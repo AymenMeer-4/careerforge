@@ -8,7 +8,7 @@ CareerForge scores a student across 7 readiness dimensions, generates a personal
 
 ## Live demo
 
-- **Live demo URL:** https://careerforge-9pjer93tn-aymen-s-projects4.vercel.app/
+- **Live demo URL:** https://careerforge-five.vercel.app/
 
 
 ## Demo accounts
@@ -43,25 +43,23 @@ Both are created by the seed script (see Setup). The student is fully onboarded 
 | Kanban roadmap view, WebSocket live updates, voice mock interview | ❌ Out of scope |
 | Medicine / Engineering cluster content | ❌ Data model supports them; only Tech is seeded |
 
-See [`CareerForge_Build_Spec.md`](./CareerForge_Build_Spec.md) §13 for the full list of explicit cuts.
-
 ---
 
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
-| UI | React 19, TypeScript |
+| Framework | Next.js 16.2.6 (App Router) |
+| UI | React 19.2, TypeScript 5 |
 | Database | PostgreSQL (Neon), accessed via `postgres` (postgres.js) |
 | Auth | `iron-session` cookies, `bcryptjs` password hashing |
-| AI | Anthropic Claude (`@anthropic-ai/sdk`) — Claude Sonnet |
+| AI | Anthropic Claude (`@anthropic-ai/sdk`) — `claude-sonnet-4-5` |
 | Email | Resend (interview / offer notifications) |
 | Validation | Zod |
 
 ## Architecture
 
-CareerForge is a single Next.js app. Route handlers under `app/api/` implement the API; core scoring logic lives in `lib/` (`readiness.ts`, `role-match.ts`, `simulator.ts`, `job-vector.ts`, `points.ts`); Claude prompts live in `lib/prompts/`. The full design — schema, algorithms, and formulas — is documented in [`CareerForge_Build_Spec.md`](./CareerForge_Build_Spec.md).
+CareerForge is a single Next.js app. Route handlers under `app/api/` implement the API; page routes live under `app/`. Core scoring logic lives in `lib/` (`readiness.ts`, `role-match.ts`, `simulator.ts`, `job-vector.ts`, `points.ts`); Claude prompts live in `lib/prompts/`. Static reference data (universities, regions, role catalog, cluster keywords, mock-interview scenarios) lives in `data/`. Bilingual strings are in `i18n/`.
 
 ---
 
@@ -89,26 +87,26 @@ npm run seed     # in another
 # http://localhost:3000
 ```
 
+Both `npm run migrate` and `npm run seed` read credentials from `.env.local` via `node --env-file=.env.local`.
+
 ### Environment variables (`.env.example`)
 
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | Neon Postgres connection string |
 | `ANTHROPIC_API_KEY` | Anthropic API key — powers all Claude integrations |
-| `RESEND_API_KEY` | Resend API key for transactional email |
-| `RESEND_FROM` | Verified sender address (falls back to `onboarding@resend.dev`) |
 | `SESSION_PASSWORD` | `iron-session` cookie encryption secret (min 32 chars) |
 | `SEED_BASE_URL` | Dev server origin used by the seed script (default `http://localhost:3000`) |
 
 ## Database schema
 
-The schema is defined and versioned as SQL migrations in [`db/migrations/`](./db/migrations). They are idempotent (`IF NOT EXISTS`) and applied in order by `npm run migrate`.
+The schema is defined and versioned as SQL migrations in [`db/migrations/`](./db/migrations) (`0001`–`0005`). They are idempotent (`IF NOT EXISTS`) and applied in order by `npm run migrate`.
 
 ---
 
 ## Claude AI integrations
 
-All nine Claude calls and where they live:
+All nine Claude calls and where their prompts live:
 
 | # | Integration | File |
 |---|---|---|
@@ -122,7 +120,7 @@ All nine Claude calls and where they live:
 | 8 | Skill validation mini-check | `lib/prompts/skill-validation.ts` |
 | 9 | Applicant fit summary | `lib/prompts/applicant-fit-summary.ts` |
 
-Shared client and retry/validation helpers: `lib/claude.ts`, `lib/claude-retry.ts`.
+Shared client and helpers: `lib/claude.ts` (text + Vision client), `lib/claude-retry.ts` (retry wrapper), `lib/claude-json.ts` (JSON parsing/validation).
 
 ---
 
