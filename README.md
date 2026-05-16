@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CareerForge AI
 
-## Getting Started
+**An AI-powered career-readiness platform that turns a Saudi student's profile into a live, market-aware roadmap to employment.**
 
-First, run the development server:
+CareerForge scores a student across 7 readiness dimensions, generates a personalised roadmap with Claude, and recalibrates it in real time as employers post jobs — connecting students and Saudi employers on one flywheel.
+
+---
+
+## Live demo
+
+- **Live demo URL:** _to be added after deployment_
+- **Demo video:** _to be added after recording_
+
+## Demo accounts
+
+| Role | Email | Password |
+|---|---|---|
+| Student | `demo.student@careerforge.sa` | `DemoPass123` |
+| Corporate | `demo.corp@careerforge.sa` | `CorpPass123` |
+
+Both are created by the seed script (see Setup). The student is fully onboarded with a roadmap, skills, and a verified certificate; the corporate ("Tuwaiq Academy") is verified with 15 seeded jobs.
+
+---
+
+## Features built
+
+| Feature | Status |
+|---|---|
+| Student signup, onboarding, profile, 7-dimension readiness scoring | ✅ |
+| Claude-generated personalised roadmap (timeline view) | ✅ |
+| Skills page with AI descriptions + 3-question validation mini-check | ✅ |
+| Dynamic simulator (live boost matrix from real jobs) | ✅ |
+| Insights, mock interview with AI scoring | ✅ |
+| Jobs board, job detail with dual readiness, AI "close the gap" path | ✅ |
+| Corporate portal: signup, dashboard, post-job, applicants, AI fit summary | ✅ |
+| Certificate AI inspection (Claude Vision) | ✅ |
+| Transcript AI extraction (Claude Vision) | ✅ |
+| Live market recalibration (corporate posting → student roadmaps + simulator) | ✅ |
+| Structured rejection → roadmap gap promotion | ✅ |
+| Bilingual UI (English + Arabic) | ✅ |
+| Mobile-responsive layout | ❌ Out of scope |
+| Real Credly / Wathq API integration | ❌ Out of scope (format validation only) |
+| Kanban roadmap view, WebSocket live updates, voice mock interview | ❌ Out of scope |
+| Medicine / Engineering cluster content | ❌ Data model supports them; only Tech is seeded |
+
+See [`CareerForge_Build_Spec.md`](./CareerForge_Build_Spec.md) §13 for the full list of explicit cuts.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| UI | React 19, TypeScript |
+| Database | PostgreSQL (Neon), accessed via `postgres` (postgres.js) |
+| Auth | `iron-session` cookies, `bcryptjs` password hashing |
+| AI | Anthropic Claude (`@anthropic-ai/sdk`) — Claude Sonnet |
+| Email | Resend (interview / offer notifications) |
+| Validation | Zod |
+
+## Architecture
+
+CareerForge is a single Next.js app. Route handlers under `app/api/` implement the API; core scoring logic lives in `lib/` (`readiness.ts`, `role-match.ts`, `simulator.ts`, `job-vector.ts`, `points.ts`); Claude prompts live in `lib/prompts/`. The full design — schema, algorithms, and formulas — is documented in [`CareerForge_Build_Spec.md`](./CareerForge_Build_Spec.md).
+
+---
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Clone
+git clone https://github.com/AymenMeer-4/careerforge.git
+cd careerforge
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment — copy the template and fill in real values
+cp .env.example .env.local
+
+# 4. Apply database migrations to your Neon database
+npm run migrate
+
+# 5. Seed demo data (start the dev server first so the roadmap step can run)
+npm run dev      # in one terminal
+npm run seed     # in another
+
+# 6. Open the app
+# http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment variables (`.env.example`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Neon Postgres connection string |
+| `ANTHROPIC_API_KEY` | Anthropic API key — powers all Claude integrations |
+| `RESEND_API_KEY` | Resend API key for transactional email |
+| `RESEND_FROM` | Verified sender address (falls back to `onboarding@resend.dev`) |
+| `SESSION_PASSWORD` | `iron-session` cookie encryption secret (min 32 chars) |
+| `SEED_BASE_URL` | Dev server origin used by the seed script (default `http://localhost:3000`) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database schema
 
-## Learn More
+The schema is defined and versioned as SQL migrations in [`db/migrations/`](./db/migrations). They are idempotent (`IF NOT EXISTS`) and applied in order by `npm run migrate`.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Claude AI integrations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All nine Claude calls and where they live:
 
-## Deploy on Vercel
+| # | Integration | File |
+|---|---|---|
+| 1 | Roadmap generation | `lib/prompts/roadmap.ts` |
+| 2 | Transcript Vision extraction | `lib/prompts/transcript.ts` |
+| 3 | Mock interview scoring | `lib/prompts/mock-interview.ts` |
+| 4 | AI insight explanation | `lib/prompts/insight-explanation.ts` |
+| 5 | Skill description generation | `lib/prompts/skill-description.ts` |
+| 6 | Job-specific path suggestion | `lib/prompts/job-path.ts` |
+| 7 | Certificate inspection (Vision) | `lib/prompts/cert-inspection.ts` |
+| 8 | Skill validation mini-check | `lib/prompts/skill-validation.ts` |
+| 9 | Applicant fit summary | `lib/prompts/applicant-fit-summary.ts` |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Shared client and retry/validation helpers: `lib/claude.ts`, `lib/claude-retry.ts`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Vision 2030 alignment
+
+Saudi Vision 2030 sets a national goal of raising employment and equipping young Saudis for a diversified, technology-driven economy. CareerForge serves that goal directly: it gives students an honest, data-grounded picture of their employment readiness, a concrete roadmap to close real gaps, and a live connection to Saudi employers — while giving those employers a structured, AI-assisted view of local talent. Every readiness number is computed from real evidence (verified certificates, transcripts, validated skills) and recalibrates against actual market demand, so the platform strengthens the student–employer pipeline the Vision depends on.
+
+## License
+
+Released under the [MIT License](./LICENSE).
