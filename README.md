@@ -8,7 +8,7 @@ CareerForge scores a student across 7 readiness dimensions, generates a personal
 
 ## Live demo
 
-- **Live demo URL:** _to be added after deployment_
+- **Live demo URL:** https://careerforge-9pjer93tn-aymen-s-projects4.vercel.app/
 
 
 ## Demo accounts
