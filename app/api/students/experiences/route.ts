@@ -29,6 +29,12 @@ export async function POST(request: Request) {
     let verification_notes = null;
 
     if (file) {
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        return NextResponse.json({ error: 'Image must be a JPG or PNG file.' }, { status: 400 });
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Image must be 5MB or smaller.' }, { status: 400 });
+      }
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const base64Data = buffer.toString('base64');

@@ -1,12 +1,14 @@
 {
-  "name": "temp_careerforge",
+  "name": "careerforge",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "seed": "node --env-file=.env.local scripts/seed.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

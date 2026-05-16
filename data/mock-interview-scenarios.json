@@ -1,0 +1,71 @@
+{
+  "tech": [
+    {
+      "scenario_key": "tech_behavioral_conflict",
+      "cluster": "tech",
+      "type": "behavioral",
+      "prompt_en": "Tell me about a time you disagreed with a teammate on a technical decision during a project. How did you handle the disagreement, and what was the outcome?",
+      "prompt_ar": "أخبرني عن موقف اختلفت فيه مع زميل في الفريق حول قرار تقني أثناء مشروع. كيف تعاملت مع الخلاف، وما هي النتيجة؟"
+    },
+    {
+      "scenario_key": "tech_situational_deadline",
+      "cluster": "tech",
+      "type": "situational",
+      "prompt_en": "You are two days from a release deadline and discover a bug that could affect users, but fixing it properly would delay the launch. What do you do, and how do you communicate it to your team and stakeholders?",
+      "prompt_ar": "تبقّى يومان على موعد إطلاق المنتج واكتشفت خطأً برمجيًا قد يؤثر على المستخدمين، لكن إصلاحه بشكل صحيح سيؤخر الإطلاق. ماذا تفعل، وكيف توصل ذلك لفريقك وأصحاب المصلحة؟"
+    },
+    {
+      "scenario_key": "tech_technical_soft_explain",
+      "cluster": "tech",
+      "type": "technical-soft",
+      "prompt_en": "A non-technical manager asks you to explain why a feature is taking longer than estimated. Explain the technical reason in a way they can understand and act on.",
+      "prompt_ar": "يطلب منك مدير غير تقني أن تشرح سبب تأخر إنجاز ميزة عن الوقت المقدّر. اشرح السبب التقني بطريقة يمكنه فهمها واتخاذ قرار بناءً عليها."
+    }
+  ],
+  "engineering": [
+    {
+      "scenario_key": "eng_behavioral_pressure",
+      "cluster": "engineering",
+      "type": "behavioral",
+      "prompt_en": "Describe a time you had to deliver an engineering task under significant time or resource pressure. What trade-offs did you make and how did you ensure quality?",
+      "prompt_ar": "صف موقفًا اضطررت فيه لإنجاز مهمة هندسية تحت ضغط كبير في الوقت أو الموارد. ما المقايضات التي قمت بها وكيف ضمنت الجودة؟"
+    },
+    {
+      "scenario_key": "eng_situational_safety",
+      "cluster": "engineering",
+      "type": "situational",
+      "prompt_en": "During a site inspection you notice a safety concern that others have overlooked, but raising it will delay the project. How do you proceed?",
+      "prompt_ar": "أثناء تفتيش الموقع تلاحظ مشكلة تتعلق بالسلامة أغفلها الآخرون، لكن الإبلاغ عنها سيؤخر المشروع. كيف تتصرف؟"
+    },
+    {
+      "scenario_key": "eng_technical_soft_explain",
+      "cluster": "engineering",
+      "type": "technical-soft",
+      "prompt_en": "Explain a complex engineering concept from your specialty to a client who has no engineering background, so they can make an informed decision.",
+      "prompt_ar": "اشرح مفهومًا هندسيًا معقدًا من تخصصك لعميل ليس لديه خلفية هندسية، بحيث يتمكن من اتخاذ قرار مدروس."
+    }
+  ],
+  "medicine": [
+    {
+      "scenario_key": "med_behavioral_error",
+      "cluster": "medicine",
+      "type": "behavioral",
+      "prompt_en": "Tell me about a time you made a mistake or noticed one in a clinical or academic setting. How did you respond, and what did you learn?",
+      "prompt_ar": "أخبرني عن موقف ارتكبت فيه خطأً أو لاحظت خطأً في بيئة سريرية أو أكاديمية. كيف تصرفت، وماذا تعلمت؟"
+    },
+    {
+      "scenario_key": "med_situational_patient",
+      "cluster": "medicine",
+      "type": "situational",
+      "prompt_en": "A patient is anxious and refuses a recommended procedure. How do you communicate with them to address their concerns while respecting their autonomy?",
+      "prompt_ar": "مريض قلق ويرفض إجراءً موصى به. كيف تتواصل معه لمعالجة مخاوفه مع احترام استقلاليته في القرار؟"
+    },
+    {
+      "scenario_key": "med_technical_soft_explain",
+      "cluster": "medicine",
+      "type": "technical-soft",
+      "prompt_en": "Explain a diagnosis and treatment plan to a patient's family in clear, compassionate terms they can understand and act on.",
+      "prompt_ar": "اشرح تشخيصًا وخطة علاج لعائلة المريض بعبارات واضحة ومتعاطفة يمكنهم فهمها والتصرف بناءً عليها."
+    }
+  ]
+}

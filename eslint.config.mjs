@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Gitignored local-only tooling — not part of the project.
+    "scratch/**",
   ]),
 ]);
 

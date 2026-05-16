@@ -45,6 +45,7 @@ export default function DashboardPage() {
   const [dimensions, setDimensions] = useState<Dimensions | null>(null);
   const [stats, setStats] = useState({ expCount: 0, certCount: 0, completedNodes: 0, mockAvg: 0 });
   const [matches, setMatches] = useState<CareerMatch[]>([]);
+  const [recJobs, setRecJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -53,11 +54,12 @@ export default function DashboardPage() {
       const meRes = await fetch('/api/auth/me');
       if (meRes.status === 401) { router.push('/login'); return; }
 
-      const [profileRes, readinessRes, statsRes, matchesRes] = await Promise.all([
+      const [profileRes, readinessRes, statsRes, matchesRes, jobsRes] = await Promise.all([
         fetch('/api/students/profile'),
         fetch('/api/readiness'),
         fetch('/api/students/stats'),
         fetch('/api/students/career-matches'),
+        fetch('/api/jobs?limit=4'),
       ]);
 
       if (profileRes.ok) setStudent(await profileRes.json());
@@ -66,6 +68,10 @@ export default function DashboardPage() {
       if (matchesRes.ok) {
         const data = await matchesRes.json();
         setMatches(data.matches ?? []);
+      }
+      if (jobsRes.ok) {
+        const data = await jobsRes.json();
+        setRecJobs(data.jobs ?? []);
       }
       setLoading(false);
     }
@@ -231,6 +237,45 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Recommended Jobs ──────────────────────────────────────────────── */}
+        <div className="profile-section" style={{ gridColumn: '1 / -1' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="profile-section-title">{lang === 'ar' ? 'وظائف موصى بها' : 'Recommended Jobs'}</h2>
+            <button className="btn-secondary" style={{ padding: '0.35rem 0.9rem', fontSize: '0.8rem' }} onClick={() => router.push('/jobs')}>
+              {lang === 'ar' ? 'عرض الكل' : 'View all'}
+            </button>
+          </div>
+          {recJobs.length === 0 ? (
+            <p className="experience-meta" style={{ fontSize: '0.82rem' }}>
+              {lang === 'ar' ? 'لا توجد وظائف متاحة حاليًا.' : 'No jobs available right now.'}
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+              {recJobs.map((job) => {
+                const jr = job.job_readiness ?? 0;
+                const jc = jr >= 80 ? '#00b894' : jr >= 60 ? '#f39c12' : '#e74c3c';
+                return (
+                  <button
+                    key={job.id}
+                    className="experience-row"
+                    onClick={() => router.push(`/jobs/${job.id}`)}
+                    style={{ cursor: 'pointer', textAlign: lang === 'ar' ? 'right' : 'left', border: '1px solid var(--border)', background: 'transparent' }}
+                  >
+                    <div className="experience-info">
+                      <p className="experience-title-text" style={{ fontSize: '0.9rem' }}>{job.title}</p>
+                      <p className="experience-meta" style={{ fontSize: '0.72rem' }}>{job.company_name}</p>
+                      <p className="experience-meta" style={{ fontSize: '0.72rem', marginTop: '4px' }}>
+                        {lang === 'ar' ? 'جاهزية الوظيفة' : 'Job Readiness'}:{' '}
+                        <b style={{ color: jc }}>{jr}%</b>
+                      </p>
+                    </div>
+                  </button>
                 );
               })}
             </div>

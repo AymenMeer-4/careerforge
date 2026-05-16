@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const { t, lang } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveOk, setSaveOk] = useState(false);
   const [session, setSession] = useState<any>(null);
   
   // Profile state
@@ -99,14 +101,24 @@ export default function ProfilePage() {
 
   const saveProfile = async () => {
     setSaving(true);
+    setSaveError('');
+    setSaveOk(false);
     try {
-      await fetch('/api/students/profile', {
+      const res = await fetch('/api/students/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile)
       });
+      if (res.ok) {
+        setSaveOk(true);
+        setTimeout(() => setSaveOk(false), 4000);
+      } else {
+        const data = await res.json().catch(() => null);
+        setSaveError(data?.error || t('profile.save_error'));
+      }
     } catch (e) {
       console.error(e);
+      setSaveError(t('profile.save_error'));
     } finally {
       setSaving(false);
     }
@@ -474,6 +486,16 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+        {saveError && (
+          <div className="alert-banner" role="alert" style={{ marginTop: '1rem' }}>
+            {saveError}
+          </div>
+        )}
+        {saveOk && (
+          <div className="alert-banner" role="status" style={{ marginTop: '1rem', borderLeftColor: 'var(--success)' }}>
+            {t('profile.save_success')}
+          </div>
+        )}
         <button onClick={saveProfile} className="btn-primary" disabled={saving} style={{ marginTop: '1.5rem' }}>
           {saving ? t('profile.saving') : t('profile.save')}
         </button>

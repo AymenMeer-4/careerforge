@@ -92,6 +92,6 @@ export async function GET() {
     return NextResponse.json({ matches: sorted });
   } catch (error: any) {
     console.error('GET /api/students/career-matches error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

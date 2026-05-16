@@ -22,7 +22,8 @@ const BodySchema = z.object({
   tier:             z.number().int().min(1).max(5).default(3),
   resources:        z.array(z.object({
     title:    z.string(),
-    url:      z.string(),
+    // url ignored on render — UI rebuilds a provider search URL from provider+title.
+    url:      z.string().optional(),
     provider: z.string(),
     type:     z.string().optional().default('course'),
     hours:    z.number().optional().default(0),
@@ -83,6 +84,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ node: saved });
   } catch (error: any) {
     console.error('POST /api/roadmap/nodes error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -22,7 +22,9 @@ import { computePoints, getDimensionWeight } from '@/lib/points';
 
 const ResourceSchema = z.object({
   title: z.string(),
-  url: z.string().url().or(z.string().startsWith('http')),
+  // url is intentionally ignored on render — the UI rebuilds a provider search
+  // URL from `provider` + `title` so no unvetted AI URL is ever surfaced.
+  url: z.string().optional(),
   provider: z.string(),
   type: z.string().optional().default('course'),
   hours: z.number().optional().default(0),
@@ -275,7 +277,7 @@ export async function POST() {
   } catch (error: any) {
     console.error('POST /api/roadmap/generate error:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
+      { error: 'Internal Server Error' },
       { status: 500 },
     );
   }

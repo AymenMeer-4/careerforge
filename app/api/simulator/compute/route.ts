@@ -74,21 +74,28 @@ export async function POST(req: Request) {
       } catch { /* keep as-is */ }
     }
     const targetBoost = targetRole ? roleBoost[targetRole] ?? 0 : 0;
+    // Boosted domain is left UNCAPPED for the readiness calc: a strong student
+    // can already have dim_domain at 100, and capping here would freeze the
+    // simulated readiness ring. The final readiness number is capped instead.
+    const boostedDomain = baseDims.dim_domain + targetBoost;
     const simDims: DimVector = {
       ...baseDims,
-      dim_domain: Math.min(100, baseDims.dim_domain + targetBoost),
+      dim_domain: Math.min(100, boostedDomain),
     };
 
-    // Simulated general readiness with the boosted domain.
-    const simReadiness =
-      (simDims.dim_academic * weights.academic +
-        simDims.dim_credentialing * weights.credentialing +
-        simDims.dim_practical * weights.practical +
-        simDims.dim_portfolio * weights.portfolio +
-        simDims.dim_domain * weights.domain +
-        simDims.dim_prof_dev * weights.prof_dev +
-        simDims.dim_soft_skills * weights.soft_skills) /
-      100;
+    // Simulated general readiness with the boosted domain (uncapped domain term,
+    // readiness capped at 100 below).
+    const simReadiness = Math.min(
+      100,
+      (baseDims.dim_academic * weights.academic +
+        baseDims.dim_credentialing * weights.credentialing +
+        baseDims.dim_practical * weights.practical +
+        baseDims.dim_portfolio * weights.portfolio +
+        boostedDomain * weights.domain +
+        baseDims.dim_prof_dev * weights.prof_dev +
+        baseDims.dim_soft_skills * weights.soft_skills) /
+        100,
+    );
 
     // Per-role simulated match: base role-match plus the role's accumulated boost.
     const clusterRoles = (roleCatalog as any[]).filter((r) => r.cluster === cluster);

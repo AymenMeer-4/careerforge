@@ -45,6 +45,6 @@ export async function POST(
     return NextResponse.json({ node: updated, success: true });
   } catch (error: any) {
     console.error('POST /api/roadmap/nodes/[id]/complete error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

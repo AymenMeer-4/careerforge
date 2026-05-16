@@ -14,9 +14,9 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const [university, setUniversity] = useState('');
-  const [notEnrolled, setNotEnrolled] = useState(false);
   const [region, setRegion] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('');
@@ -52,8 +52,7 @@ export default function OnboardingPage() {
         const profile = await res.json();
         if (profile.onboarding_completed_at) {
           setIsEditing(true);
-          setUniversity(profile.university === 'Not Enrolled' ? '' : profile.university);
-          setNotEnrolled(profile.university === 'Not Enrolled');
+          setUniversity(profile.university === 'Not Enrolled' ? '' : profile.university || '');
           setRegion(profile.region || '');
           setSpecialty(profile.specialty || '');
           setYearOfStudy(profile.year_of_study || '');
@@ -77,9 +76,10 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setError('');
     try {
       const payload = {
-        university: notEnrolled ? 'Not Enrolled' : university,
+        university,
         region,
         specialty,
         cluster: detectedCluster,
@@ -98,9 +98,14 @@ export default function OnboardingPage() {
       if (res.ok) {
         await fetch('/api/readiness/recompute', { method: 'POST' });
         router.push('/dashboard');
+        return;
       }
+
+      const data = await res.json().catch(() => null);
+      setError(data?.error || t('onboarding.save_error'));
     } catch (err) {
       console.error(err);
+      setError(t('onboarding.save_error'));
     } finally {
       setSubmitting(false);
     }
@@ -108,7 +113,7 @@ export default function OnboardingPage() {
 
   const isStepValid = () => {
     switch (step) {
-      case 1: return notEnrolled || university.trim() !== '';
+      case 1: return university.trim() !== '';
       case 2: return region !== '';
       case 3: return specialty.trim() !== '';
       case 4: return yearOfStudy !== '';
@@ -137,27 +142,19 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div>
               <h2 className="step-title">{t('onboarding.university_label')}</h2>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 list="universities-list"
-                className="input" 
+                className="input"
                 value={university}
-                onChange={(e) => { setUniversity(e.target.value); setNotEnrolled(false); }}
+                onChange={(e) => setUniversity(e.target.value)}
                 placeholder={t('onboarding.university_placeholder')}
-                disabled={notEnrolled}
               />
               <datalist id="universities-list">
                 {universitiesData.map(u => (
                   <option key={u.key} value={lang === 'ar' ? u.name_ar : u.name_en} />
                 ))}
               </datalist>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginTop: '1rem' }}>
-                <input type="checkbox" checked={notEnrolled} onChange={(e) => {
-                  setNotEnrolled(e.target.checked);
-                  if (e.target.checked) setUniversity('');
-                }} />
-                <span className="form-label">{t('onboarding.not_enrolled')}</span>
-              </label>
             </div>
           )}
 
@@ -274,6 +271,12 @@ export default function OnboardingPage() {
             </div>
           )}
         </div>
+
+        {error && (
+          <div className="alert-banner" role="alert" style={{ marginBottom: '1rem' }}>
+            {error}
+          </div>
+        )}
 
         <div className="step-actions">
           {step > 1 && (

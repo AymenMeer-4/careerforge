@@ -60,6 +60,14 @@ export async function PATCH(request: Request) {
       body.cluster = mapSpecialtyToCluster(body.specialty);
     }
 
+    // Ensure a students row exists. Signup creates one, but an account can be
+    // left orphaned (e.g. a DB reseed that wipes students but keeps users) —
+    // without this the UPDATE below silently matches nothing.
+    await sql`
+      INSERT INTO students (user_id) VALUES (${session.userId})
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+
     // 1. Update students table fields
     const studentAllowedFields = [
       'university', 'region', 'specialty', 'cluster', 'year_of_study', 
@@ -121,7 +129,11 @@ export async function PATCH(request: Request) {
       WHERE s.user_id = ${session.userId}
     `;
 
-    const isComplete = 
+    if (!updatedProfile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    const isComplete =
       updatedProfile.name && updatedProfile.email && updatedProfile.phone &&
       updatedProfile.university && updatedProfile.region && updatedProfile.specialty &&
       updatedProfile.year_of_study && updatedProfile.gpa_scale && updatedProfile.gpa_value !== null &&

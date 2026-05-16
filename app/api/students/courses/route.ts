@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getSession } from '@/lib/session';
 import sql from '@/lib/db';
 import { computeStudentDimensions } from '@/lib/readiness';
+
+const CoursesSchema = z.object({
+  courses: z.array(z.object({
+    course_name: z.string().min(1).max(200),
+    course_code: z.string().max(50).optional().nullable(),
+    credits: z.union([z.string(), z.number()]).optional().nullable(),
+    grade: z.string().max(20).optional().nullable(),
+    semester: z.string().max(50).optional().nullable(),
+    source: z.enum(['manual', 'transcript_vision']).optional(),
+  })).max(60),
+});
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +23,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const courses = body.courses;
-
-    if (!Array.isArray(courses)) {
-      return NextResponse.json({ error: 'Courses must be an array' }, { status: 400 });
+    const parsed = CoursesSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid courses data' }, { status: 400 });
     }
+    const courses = parsed.data.courses;
 
     // Replace all existing rows
     await sql`
@@ -27,7 +39,9 @@ export async function POST(request: Request) {
         student_id: session.userId,
         course_name: c.course_name,
         course_code: c.course_code || null,
-        credits: c.credits ? parseFloat(c.credits) : null,
+        credits: c.credits != null && c.credits !== '' && !Number.isNaN(Number(c.credits))
+          ? Number(c.credits)
+          : null,
         grade: c.grade || null,
         semester: c.semester || null,
         source: c.source || 'manual'

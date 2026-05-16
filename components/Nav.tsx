@@ -8,6 +8,7 @@ export default function Nav() {
   const { lang, setLang, t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export default function Nav() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setIsLoggedIn(false);
+      setRole(null);
       router.push('/');
       router.refresh();
     } catch (error) {
@@ -32,11 +34,17 @@ export default function Nav() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => {
-        if (res.ok) setIsLoggedIn(true);
-        else setIsLoggedIn(false);
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          setIsLoggedIn(true);
+          setRole(data.role ?? null);
+        } else {
+          setIsLoggedIn(false);
+          setRole(null);
+        }
       })
-      .catch(() => setIsLoggedIn(false));
+      .catch(() => { setIsLoggedIn(false); setRole(null); });
   }, [pathname]);
 
   useEffect(() => {
@@ -50,7 +58,7 @@ export default function Nav() {
   }, []);
 
   return (
-    <nav className={`nav ${scrolled ? 'scrolled' : ''}`} id="navbar">
+    <nav className={`nav ${scrolled ? 'scrolled' : ''}`} id="navbar" style={{ direction: 'ltr' }}>
       <Link href="/" className="nav-logo">
         <svg viewBox="0 0 32 32" fill="none" style={{ width: '32px', height: '32px' }}>
           <circle cx="16" cy="16" r="14" stroke="url(#lg1)" strokeWidth="2.5" />
@@ -66,13 +74,38 @@ export default function Nav() {
         <span>CareerForge <span className="text-gradient">AI</span></span>
       </Link>
 
-      {/* Authenticated nav links — hidden when logged out */}
-      {isLoggedIn && (
-        <div className="nav-links">
+      {/* Student nav links — students only */}
+      {isLoggedIn && role === 'student' && (
+        <div
+          className="nav-links"
+          style={{ marginLeft: 'auto', marginRight: '1.5rem', justifyContent: 'flex-end', maxWidth: 'none', flex: '0 1 auto' }}
+        >
           <Link href="/dashboard" className={pathname === '/dashboard' ? 'active' : ''}>{t('nav.dashboard')}</Link>
           <Link href="/simulator" className={pathname === '/simulator' ? 'active' : ''}>{t('nav.simulator')}</Link>
           <Link href="/skills" className={pathname === '/skills' ? 'active' : ''}>{t('nav.skills')}</Link>
           <Link href="/roadmap" className={pathname === '/roadmap' ? 'active' : ''}>{t('nav.roadmap')}</Link>
+          <Link href="/jobs" className={pathname.startsWith('/jobs') ? 'active' : ''}>{t('nav.jobs')}</Link>
+          <Link href="/applications" className={pathname === '/applications' ? 'active' : ''}>{t('nav.applications')}</Link>
+          <Link href="/mock-interview" className={pathname === '/mock-interview' ? 'active' : ''}>{t('nav.mock_interview')}</Link>
+          <Link href="/insights" className={pathname === '/insights' ? 'active' : ''}>{t('nav.insights')}</Link>
+        </div>
+      )}
+
+      {/* Corporate nav links — corporates only */}
+      {isLoggedIn && role === 'corporate' && (
+        <div
+          className="nav-links"
+          style={{ marginLeft: 'auto', marginRight: '1.5rem', justifyContent: 'flex-end', maxWidth: 'none', flex: '0 1 auto' }}
+        >
+          <Link
+            href="/corporate/dashboard"
+            className={pathname.startsWith('/corporate/dashboard') || pathname.startsWith('/corporate/jobs') ? 'active' : ''}
+          >
+            {t('nav.applicants')}
+          </Link>
+          <Link href="/corporate/post-job" className={pathname === '/corporate/post-job' ? 'active' : ''}>
+            {t('nav.post_job')}
+          </Link>
         </div>
       )}
 
@@ -124,7 +157,7 @@ export default function Nav() {
                 zIndex: 1000
               }}>
                 <Link
-                  href="/profile"
+                  href={role === 'corporate' ? '/corporate/profile' : '/profile'}
                   onClick={() => setDropdownOpen(false)}
                   style={{
                     display: 'block',
@@ -135,7 +168,7 @@ export default function Nav() {
                     borderBottom: '1px solid var(--border)'
                   }}
                 >
-                  {t('profile.section_basic')}
+                  {role === 'corporate' ? t('nav.company_profile') : t('profile.section_basic')}
                 </Link>
                 <button
                   onClick={handleLogout}
